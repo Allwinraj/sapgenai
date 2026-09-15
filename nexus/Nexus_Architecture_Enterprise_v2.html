@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Nexus 2.0 — Enterprise target v2</title>
+<style>
+  :root {
+    --ink: #12243a;
+    --muted: #5d6f85;
+    --navy: #0b2e55;
+    --blue: #0f6bd4;
+    --built-bg: #eafaf1; --built-br: #12805c; --built-tx: #0a5c43;
+    --accent-bg: #eef4ff; --accent-br: #0f6bd4; --accent-tx: #0a4f9e;
+    --card-br: #cfdcea;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  .stage { position: relative; width: 2600px; height: 1860px; background: #fff; }
+  .stage > * { position: absolute; }
+  .wires { left: 0; top: 0; width: 2600px; height: 1860px; z-index: 3; pointer-events: none; }
+  .stage > div { z-index: 2; }
+
+  .num { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+         border-radius: 50%; background: var(--navy); color: #fff; font-weight: 700; font-size: 17px; flex: 0 0 auto; }
+  .gate { display: inline-block; background: var(--navy); color: #fff; font-size: 11px; font-weight: 700;
+          border-radius: 4px; padding: 2px 7px; letter-spacing: .3px; }
+  .hdr { display: flex; align-items: center; gap: 12px; }
+  .hdr h3 { margin: 0; font-size: 20px; letter-spacing: -0.2px; }
+  .cap { margin: 5px 0 0; font-size: 13px; line-height: 1.35; color: var(--muted); font-style: italic; }
+
+  .title { left: 40px; top: 20px; width: 1700px; }
+  .title h1 { margin: 0; font-size: 36px; letter-spacing: -0.5px; }
+  .title h1 span { color: var(--muted); font-weight: 600; }
+  .title p { margin: 5px 0 0; font-size: 16px; color: var(--muted); }
+  .legend { left: 1720px; top: 22px; width: 840px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .lg { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600;
+        border: 1px solid var(--card-br); border-radius: 20px; padding: 6px 12px 6px 9px; }
+  .sw { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; }
+  .sw.s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .sw.ac { background: var(--accent-bg); border: 2px solid var(--accent-br); }
+  .lg.dark { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  .tp-label { left: 40px; top: 100px; width: 280px; }
+  .tp { top: 98px; height: 52px; border: 2px solid var(--built-br); background: var(--built-bg);
+        border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 700; color: var(--built-tx); text-align: center; padding: 4px 6px; line-height: 1.15; }
+  .tp small { font-weight: 500; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .avatar { left: 1255px; top: 154px; width: 88px; height: 72px; background: #fff; border: 2px solid var(--blue);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .avatar svg { width: 40px; height: 40px; }
+
+  .app { left: 300px; top: 242px; width: 2000px; height: 1288px; background: var(--blue);
+         border-radius: 18px; box-shadow: inset 0 0 0 6px rgba(255,255,255,.10); }
+  .app-title { left: 300px; top: 252px; width: 2000px; text-align: center; color: #fff;
+               font-size: 27px; font-weight: 700; letter-spacing: -0.3px; }
+  .app-sub { left: 300px; top: 286px; width: 2000px; text-align: center; color: #cfe3fb; font-size: 14px; }
+
+  .panel { background: #fff; border-radius: 12px; border: 1px solid var(--card-br); padding: 12px 16px 14px; }
+  .panel .note { font-size: 12.8px; color: var(--muted); }
+
+  .box { border-radius: 9px; padding: 9px 11px; display: flex; flex-direction: column; }
+  .box .bt { font-size: 16px; font-weight: 700; line-height: 1.15; }
+  .box .bs { font-size: 12.5px; line-height: 1.32; color: #40566d; margin-top: 4px; }
+  .box .bp { font-size: 12px; line-height: 1.28; margin-top: auto; padding-top: 6px; font-weight: 600; }
+  .s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .s1 .bt { color: var(--built-tx); } .s1 .bp { color: var(--built-br); }
+  .ac { background: var(--accent-bg); border: 2px solid var(--accent-br); }
+  .ac .bt { color: var(--accent-tx); } .ac .bs { color: #2c4a72; } .ac .bp { color: var(--accent-br); }
+
+  .chip { border-radius: 7px; padding: 6px 9px; font-size: 12.6px; font-weight: 600; line-height: 1.25;
+          background: var(--built-bg); border: 2px solid var(--built-br); color: var(--built-tx); }
+  .chip small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .chip.ac { background: var(--accent-bg); border-color: var(--accent-br); color: var(--accent-tx); }
+
+  .side { width: 240px; background: #fff; border: 2px solid var(--blue); border-radius: 14px; padding: 12px 13px 14px; }
+  .side .icon { width: 42px; height: 42px; border-radius: 50%; background: var(--navy); color: #fff;
+                display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 700; }
+  .side h3 { margin: 8px 0 0; font-size: 17.5px; line-height: 1.15; }
+  .side .cap { margin-top: 4px; font-size: 12.4px; }
+  .side .stackchips { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+  .side .stackchips .chip { font-size: 12px; padding: 5px 8px; }
+
+  .foundation { left: 40px; top: 1572px; width: 2520px; height: 168px; background: #fff;
+                border: 2px solid var(--card-br); border-radius: 14px; padding: 12px 16px; }
+  .foundation .row { display: flex; gap: 8px; margin-top: 7px; }
+  .foundation .row .chip { flex: 1 1 0; text-align: center; }
+  .footnote { left: 40px; top: 1756px; width: 2520px; font-size: 14.5px; color: var(--muted); line-height: 1.42; }
+  .footnote b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <svg class="wires" viewBox="0 0 2600 1860" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a-navy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0b2e55"/>
+      </marker>
+      <marker id="a-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0f6bd4"/>
+      </marker>
+      <marker id="a-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#12805c"/>
+      </marker>
+    </defs>
+    <line x1="455" y1="178" x2="1250" y2="178" stroke="#12805c" stroke-width="2.4"/>
+    <line x1="1348" y1="178" x2="2205" y2="178" stroke="#12805c" stroke-width="2.4"/>
+    <g stroke="#12805c" stroke-width="2.2">
+      <line x1="455" y1="150" x2="455" y2="178"/>
+      <line x1="705" y1="150" x2="705" y2="178"/>
+      <line x1="955" y1="150" x2="955" y2="178"/>
+      <line x1="1205" y1="150" x2="1205" y2="178"/>
+      <line x1="1455" y1="150" x2="1455" y2="178"/>
+      <line x1="1705" y1="150" x2="1705" y2="178"/>
+      <line x1="1955" y1="150" x2="1955" y2="178"/>
+      <line x1="2205" y1="150" x2="2205" y2="178"/>
+    </g>
+    <line x1="1300" y1="226" x2="1300" y2="239" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <g stroke="#12805c" stroke-width="3">
+      <line x1="695" y1="430" x2="735" y2="430" marker-end="url(#a-green)"/>
+      <line x1="1084" y1="430" x2="1124" y2="430" marker-end="url(#a-green)"/>
+      <line x1="1473" y1="430" x2="1513" y2="430" marker-end="url(#a-green)"/>
+      <line x1="1862" y1="430" x2="1902" y2="430" marker-end="url(#a-green)"/>
+    </g>
+    <line x1="1300" y1="500" x2="1300" y2="518" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <line x1="1300" y1="648" x2="1300" y2="666" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <g stroke="#12805c" stroke-width="3">
+      <line x1="988" y1="820" x2="1022" y2="820" marker-end="url(#a-green)"/>
+      <line x1="1304" y1="820" x2="1338" y2="820" marker-end="url(#a-green)"/>
+      <line x1="1620" y1="820" x2="1654" y2="820" marker-end="url(#a-green)"/>
+      <line x1="1936" y1="820" x2="1970" y2="820" marker-end="url(#a-green)"/>
+    </g>
+    <g stroke="#0b2e55" stroke-width="2.2" stroke-dasharray="6 4">
+      <line x1="848" y1="938" x2="848" y2="962" marker-end="url(#a-navy)"/>
+      <line x1="1164" y1="938" x2="1164" y2="962" marker-end="url(#a-navy)"/>
+      <line x1="1480" y1="938" x2="1480" y2="962" marker-end="url(#a-navy)"/>
+      <line x1="1796" y1="938" x2="1796" y2="962" marker-end="url(#a-navy)"/>
+      <line x1="2112" y1="938" x2="2112" y2="962" marker-end="url(#a-navy)"/>
+    </g>
+    <line x1="1300" y1="1098" x2="1300" y2="1116" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <line x1="284" y1="430" x2="326" y2="430" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="284" y1="980" x2="326" y2="980" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="2276" y1="500" x2="2316" y2="500" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <path d="M2316 820 L2286 820" stroke="#0b2e55" stroke-width="2.4" stroke-dasharray="7 5" marker-end="url(#a-navy)" fill="none"/>
+    <line x1="2316" y1="1180" x2="2276" y2="1180" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <line x1="1300" y1="1568" x2="1300" y2="1536" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+  </svg>
+
+  <div class="title">
+    <h1>NEXUS 2.0 <span>· enterprise target v2</span></h1>
+    <p>Next-phase architecture. Agent runtime in the middle. Knowledge graph, OCR, cost/latency gates, sandbox and identity named on the chips.</p>
+  </div>
+  <div class="legend">
+    <div class="lg"><span class="sw s1"></span>Enterprise stack</div>
+    <div class="lg"><span class="sw ac"></span>Runtime · KG · OCR · APIs</div>
+    <div class="lg dark"><span>&#9995;</span>Human gate</div>
+  </div>
+
+  <div class="tp-label">
+    <div class="hdr"><span class="num">1</span><h3>Touchpoints</h3></div>
+    <p class="cap">Every entry hits the API gateway first</p>
+  </div>
+  <div class="tp" style="left:340px; width:230px;">Chat<small>React · FastAPI</small></div>
+  <div class="tp" style="left:590px; width:230px;">Upload<small>S3 · malware scan</small></div>
+  <div class="tp" style="left:840px; width:230px;">Mailbox<small>IMAP</small></div>
+  <div class="tp" style="left:1090px; width:230px;">Slack<small>Bolt · Events API</small></div>
+  <div class="tp" style="left:1340px; width:230px;">SAP / webhook<small>Event Mesh · signed</small></div>
+  <div class="tp" style="left:1590px; width:230px;">Canvas<small>React Flow</small></div>
+  <div class="tp" style="left:1840px; width:230px;">Approve &#9995;<small>RBAC nexus.approve</small></div>
+  <div class="tp" style="left:2090px; width:230px;">Download<small>signed URL</small></div>
+  <div class="avatar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#0f6bd4" stroke-width="1.8">
+      <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>
+    </svg>
+  </div>
+
+  <div class="app"></div>
+  <div class="app-title">Nexus application &nbsp;·&nbsp; agent runtime</div>
+  <div class="app-sub">Sessions · memory · sandbox · model router · identity on every call &nbsp;·&nbsp; knowledge graph cited in match and decision &nbsp;·&nbsp; OCR on every document</div>
+
+  <!-- 2 orchestration -->
+  <div class="panel" style="left:330px; top:318px; width:1940px; height:182px;">
+    <div class="hdr"><span class="num">2</span><h3>Orchestration &nbsp;·&nbsp; agent runtime runs the flow</h3>
+      <span class="note">The canvas still authors a JSON graph. The runtime plans, checkpoints, applies policy, and streams. LangGraph is one optional compiler, not the product.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:376px; width:345px; height:106px;">
+    <span class="bt">Interview</span>
+    <span class="bs">Grounded in uploads, mail, Slack and SAP events</span>
+    <span class="bp">Structured output · Pydantic</span>
+  </div>
+  <div class="box s1" style="left:739px; top:376px; width:345px; height:106px;">
+    <span class="bt">Typed requirements</span>
+    <span class="bs">Validated slots, refused if out of scope</span>
+    <span class="bp">Pydantic v2</span>
+  </div>
+  <div class="box s1" style="left:1128px; top:376px; width:345px; height:106px;">
+    <span class="bt">Graph assembly</span>
+    <span class="bs">User-editable JSON DAG on the canvas</span>
+    <span class="bp">Pipeline model · React Flow</span>
+  </div>
+  <div class="box ac" style="left:1517px; top:376px; width:345px; height:106px;">
+    <span class="bt">Agent runtime</span>
+    <span class="bs">Plan levels, checkpoint, cancel, wait for approval</span>
+    <span class="bp">Durable workers · session store</span>
+  </div>
+  <div class="box ac" style="left:1906px; top:376px; width:345px; height:106px;">
+    <span class="bt">Model router</span>
+    <span class="bs">Pick model by role, cost and latency budget</span>
+    <span class="bp">LiteLLM · fallback · cache</span>
+  </div>
+
+  <!-- runtime fabric -->
+  <div class="panel" style="left:330px; top:518px; width:1940px; height:128px;">
+    <div class="hdr"><span class="num">2b</span><h3>Runtime fabric &nbsp;·&nbsp; what every skill runs inside</h3>
+      <span class="note">This is the enterprise layer the current process is missing.</span>
+    </div>
+  </div>
+  <div class="chip ac" style="left:350px; top:572px; width:360px;">Sessions<small>Postgres · Redis · resume a run or a chat</small></div>
+  <div class="chip ac" style="left:730px; top:572px; width:360px;">Memory<small>short-term run state · tenant preferences</small></div>
+  <div class="chip ac" style="left:1110px; top:572px; width:360px;">Sandbox<small>gVisor / Firecracker for tools · AST for formulas</small></div>
+  <div class="chip ac" style="left:1490px; top:572px; width:360px;">Identity context<small>OIDC token · tenant · scopes on the run</small></div>
+  <div class="chip" style="left:1870px; top:572px; width:370px;">Optional compiler<small>LangGraph StateGraph, if a loop is needed</small></div>
+
+  <!-- 3 skills -->
+  <div class="panel" style="left:330px; top:666px; width:1940px; height:432px;">
+    <div class="hdr"><span class="num">3</span><h3>Five specialist skills</h3>
+      <span class="note">Ingestion now OCRs documents. Matching and decision both read the knowledge graph. Math stays sandboxed.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:722px; width:320px; height:354px;">
+    <span class="bt">Skill anatomy</span>
+    <span class="bs">Same five types, richer surroundings.</span>
+    <div style="display:flex; flex-direction:column; gap:5px; margin-top:8px;">
+      <div class="chip ac">Agent runtime node<small>checkpointed step</small></div>
+      <div class="chip ac">Sandbox + scopes<small>least privilege</small></div>
+      <div class="chip ac">Guardrails<small>Llama Guard · OPA</small></div>
+      <div class="chip ac">KG lookup<small>entity + relations</small></div>
+      <div class="chip">Behaviour version<small>pinned on the flow</small></div>
+    </div>
+  </div>
+  <div class="box ac" style="left:710px; top:722px; width:278px; height:214px;">
+    <span class="bt">Ingestion + OCR</span>
+    <span class="bs">Tables, mail, Slack, scanned PDFs and images. Layout kept so a figure stays a row.</span>
+    <span class="bp">Document AI · Tesseract · Unstructured<br>out: default</span>
+  </div>
+  <div class="box ac" style="left:1026px; top:722px; width:278px; height:214px;">
+    <span class="bt">Matching + KG</span>
+    <span class="bs">Keys and windows, then resolve the same real-world entity on the graph</span>
+    <span class="bp">Matcher · Neo4j / Neptune<br>out: matched · residuals · exceptions</span>
+  </div>
+  <div class="box s1" style="left:1342px; top:722px; width:278px; height:214px;">
+    <span class="bt">Math</span>
+    <span class="bs">User formula, never arbitrary code</span>
+    <span class="bp">AST sandbox<br>out: default</span>
+  </div>
+  <div class="box ac" style="left:1658px; top:722px; width:278px; height:214px;">
+    <span class="bt">Decision + GraphRAG</span>
+    <span class="bs">Verdict cites passages and graph neighbours, then guardrailed</span>
+    <span class="bp">LLM · hybrid RAG · KG path<br>out: approved · flagged · escalated</span>
+  </div>
+  <div class="box s1" style="left:1974px; top:722px; width:278px; height:214px;">
+    <span class="bt">Output</span>
+    <span class="bs">Artefacts, then a wait-state until an approver clicks</span>
+    <span class="bp">openpyxl · ReportLab &nbsp;<span class="gate">&#9995;</span><br>out: artefacts</span>
+  </div>
+  <div class="box s1" style="left:710px; top:962px; width:1542px; height:112px;">
+    <span class="bt">Typed message between skills</span>
+    <span class="bs">Same envelope as today. At the edge it can be published as A2A; internally it also carries graph ids and OCR provenance.</span>
+    <div style="display:flex; gap:8px; margin-top:6px;">
+      <div class="chip" style="flex:1 1 0;">payload</div>
+      <div class="chip" style="flex:1 1 0;">exit port</div>
+      <div class="chip ac" style="flex:1 1 0;">OCR provenance</div>
+      <div class="chip ac" style="flex:1 1 0;">KG entity ids</div>
+      <div class="chip ac" style="flex:1 1 0;">RAG + graph cites</div>
+      <div class="chip" style="flex:1 1 0;">run / session id</div>
+    </div>
+  </div>
+
+  <!-- 4 capabilities -->
+  <div class="panel" style="left:330px; top:1116px; width:1940px; height:384px;">
+    <div class="hdr"><span class="num">4</span><h3>Systems a skill can call</h3>
+      <span class="note">SAP and any OpenAPI system sit behind the same gateway, rate limit, idempotency key and OPA check.</span>
+    </div>
+  </div>
+  <div class="chip ac" style="left:350px; top:1176px; width:300px;">SAP APIs<small>OData · BTP destination · principal propagation</small></div>
+  <div class="chip ac" style="left:670px; top:1176px; width:300px;">External APIs<small>OpenAPI client · API gateway</small></div>
+  <div class="chip ac" style="left:990px; top:1176px; width:300px;">Knowledge graph<small>Neo4j · Cypher / Gremlin</small></div>
+  <div class="chip ac" style="left:1310px; top:1176px; width:300px;">Document AI / OCR<small>cloud OCR or Tesseract</small></div>
+  <div class="chip" style="left:1630px; top:1176px; width:300px;">Mailbox<small>IMAP / SMTP · after RBAC</small></div>
+  <div class="chip" style="left:1950px; top:1176px; width:300px;">Writers<small>openpyxl · ReportLab</small></div>
+
+  <div class="chip ac" style="left:350px; top:1266px; width:300px;">Model gateway<small>LiteLLM · cost &amp; latency caps</small></div>
+  <div class="chip ac" style="left:670px; top:1266px; width:300px;">MCP tools<small>registry · egress allowlist</small></div>
+  <div class="chip ac" style="left:990px; top:1266px; width:300px;">Event mesh<small>Kafka / NATS / SAP Event Mesh</small></div>
+  <div class="chip ac" style="left:1310px; top:1266px; width:300px;">Data catalog<small>contracted datasets · freshness</small></div>
+  <div class="chip ac" style="left:1630px; top:1266px; width:300px;">Object store<small>S3 / MinIO · encrypted</small></div>
+  <div class="chip ac" style="left:1950px; top:1266px; width:300px;">Master data<small>entity resolution API</small></div>
+
+  <div class="chip ac" style="left:350px; top:1356px; width:1900px;">
+    Call policy on every outbound &nbsp;·&nbsp; API gateway + mTLS &nbsp;·&nbsp; OPA / Cedar &nbsp;·&nbsp; DLP redaction before a model or external API &nbsp;·&nbsp; idempotency ledger on SAP and any write
+    <small>A tool or API result is data, never an instruction. Dispatch still waits for nexus.approve.</small>
+  </div>
+
+  <!-- sides -->
+  <div class="side" style="left:40px; top:318px; height:500px;">
+    <div class="icon">5</div>
+    <h3>Workbench</h3>
+    <p class="cap">Build, gate, release, roll back</p>
+    <div class="stackchips">
+      <div class="chip">Canvas + config<small>React Flow · JSON Schema</small></div>
+      <div class="chip">Dry run<small>side effects off</small></div>
+      <div class="chip">Golden replay<small>eval set</small></div>
+      <div class="chip ac">Release gate<small>quality · latency · cost</small></div>
+      <div class="chip ac">Feature flags<small>LaunchDarkly / Unleash</small></div>
+      <div class="chip ac">Rollback<small>pin previous flow version</small></div>
+      <div class="chip">Canary promote<small>draft → live</small></div>
+    </div>
+  </div>
+
+  <div class="side" style="left:40px; top:838px; height:552px;">
+    <div class="icon">6</div>
+    <h3>Context · KG + RAG</h3>
+    <p class="cap">Evidence, entities, memory</p>
+    <div class="stackchips">
+      <div class="chip ac">OCR text + layout<small>Document AI</small></div>
+      <div class="chip">Chunk &amp; embed<small>Unstructured · vectors</small></div>
+      <div class="chip ac">Vector index<small>Qdrant / pgvector</small></div>
+      <div class="chip ac">Knowledge graph<small>Neo4j / Neptune</small></div>
+      <div class="chip ac">GraphRAG<small>vector + graph path</small></div>
+      <div class="chip ac">Data catalog<small>owned data products</small></div>
+      <div class="chip ac">Long-term memory<small>tenant preferences</small></div>
+      <div class="chip">Entitlement<small>ACL on every retrieve</small></div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:318px; height:560px;">
+    <div class="icon">7</div>
+    <h3>Assurance</h3>
+    <p class="cap">Cost, latency, drift, gates</p>
+    <div class="stackchips">
+      <div class="chip">Tracing<small>OpenTelemetry · gen_ai</small></div>
+      <div class="chip ac">Latency SLO<small>p95 per skill · Grafana</small></div>
+      <div class="chip ac">Cost per run<small>tokens · tenant budget</small></div>
+      <div class="chip ac">Drift<small>Evidently · override rate</small></div>
+      <div class="chip">Eval<small>Ragas · golden set</small></div>
+      <div class="chip ac">Release gate<small>block if SLO or cost regress</small></div>
+      <div class="chip ac">SIEM / audit<small>append-only · retention</small></div>
+      <div class="chip">On-call alerts<small>PagerDuty / Slack-out later</small></div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:898px; height:492px;">
+    <div class="icon">8</div>
+    <h3>Identity · policy · sandbox</h3>
+    <p class="cap">Wraps every call in the blue box</p>
+    <div class="stackchips">
+      <div class="chip ac">OIDC sign-in<small>Keycloak / Auth0 / IAS</small></div>
+      <div class="chip ac">RBAC<small>view · build · run · approve</small></div>
+      <div class="chip ac">ABAC<small>OPA or Cedar</small></div>
+      <div class="chip ac">Workload identity<small>mTLS · SPIFFE</small></div>
+      <div class="chip">Vault<small>secrets · rotation</small></div>
+      <div class="chip ac">DLP<small>redact before the model</small></div>
+      <div class="chip ac">Execution sandbox<small>gVisor · network policy</small></div>
+    </div>
+  </div>
+
+  <div class="foundation">
+    <div class="hdr"><span class="num">9</span><h3>Runtime foundation</h3>
+      <span class="note">Platform pieces an enterprise buyer assumes. Two rows: compute and data, then the control plane.</span>
+    </div>
+    <div class="row">
+      <div class="chip ac">API gateway<small>Kong / Apigee · WAF</small></div>
+      <div class="chip">Web API<small>FastAPI</small></div>
+      <div class="chip ac">Agent runtime<small>K8s workers · checkpoints</small></div>
+      <div class="chip ac">Service mesh<small>Istio / Linkerd · mTLS</small></div>
+      <div class="chip">Postgres<small>sessions · traces · flows</small></div>
+      <div class="chip ac">Graph DB<small>Neo4j / Neptune</small></div>
+      <div class="chip">Object store<small>S3 / MinIO</small></div>
+      <div class="chip">Redis<small>cache · locks · sessions</small></div>
+    </div>
+    <div class="row">
+      <div class="chip">Vector DB<small>Qdrant / pgvector</small></div>
+      <div class="chip">Telemetry<small>OTel · Prometheus · Grafana</small></div>
+      <div class="chip">Secrets<small>Vault · KMS</small></div>
+      <div class="chip">Flags<small>Unleash / LaunchDarkly</small></div>
+      <div class="chip">Catalog<small>data contracts</small></div>
+      <div class="chip">CI / CD<small>signed images · canary</small></div>
+      <div class="chip">Backup<small>PITR · tested restore</small></div>
+      <div class="chip">Mesh events<small>Kafka / NATS</small></div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>Read it as a sentence:</b> traffic hits an API gateway (1). The agent runtime interviews, builds the JSON graph, checkpoints the run, and routes models by cost and latency (2–2b).
+    Ingestion OCRs documents; matching and decision read a knowledge graph; math stays in a sandbox (3). SAP APIs and any external OpenAPI sit behind the same policy, DLP and idempotency (4).
+    The workbench will not promote if quality, latency or cost regress, and can roll back (5). Context is OCR + hybrid RAG + graph + memory (6).
+    Assurance watches cost, latency and drift (7). Identity, RBAC, OPA, DLP and a sandbox wrap every call (8). Kubernetes, mesh, Postgres, graph DB, object store and Vault sit underneath (9).
+  </div>
+
+</div>
+</body>
+</html>

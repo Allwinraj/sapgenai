@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Nexus 2.0 — Enterprise target flow</title>
+<style>
+  :root {
+    --ink: #12243a;
+    --muted: #5d6f85;
+    --navy: #0b2e55;
+    --blue: #0f6bd4;
+    --built-bg: #eafaf1; --built-br: #12805c; --built-tx: #0a5c43;
+    --accent-bg: #eef4ff; --accent-br: #0f6bd4; --accent-tx: #0a4f9e;
+    --card-br: #cfdcea;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  .stage { position: relative; width: 2600px; height: 1740px; background: #fff; }
+  .stage > * { position: absolute; }
+  .wires { left: 0; top: 0; width: 2600px; height: 1740px; z-index: 3; pointer-events: none; }
+  .stage > div { z-index: 2; }
+
+  .num { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+         border-radius: 50%; background: var(--navy); color: #fff; font-weight: 700; font-size: 17px; flex: 0 0 auto; }
+  .gate { display: inline-block; background: var(--navy); color: #fff; font-size: 11px; font-weight: 700;
+          border-radius: 4px; padding: 2px 7px; letter-spacing: .3px; }
+  .hdr { display: flex; align-items: center; gap: 12px; }
+  .hdr h3 { margin: 0; font-size: 21px; letter-spacing: -0.2px; }
+  .cap { margin: 5px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--muted); font-style: italic; }
+
+  .title { left: 40px; top: 22px; width: 1680px; }
+  .title h1 { margin: 0; font-size: 38px; letter-spacing: -0.6px; }
+  .title h1 span { color: var(--muted); font-weight: 600; }
+  .title p { margin: 6px 0 0; font-size: 16.5px; color: var(--muted); }
+  .legend { left: 1720px; top: 26px; width: 840px; display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+  .lg { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600;
+        border: 1px solid var(--card-br); border-radius: 20px; padding: 7px 14px 7px 10px; }
+  .sw { width: 20px; height: 20px; border-radius: 5px; flex: 0 0 auto; }
+  .sw.s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .sw.ac { background: var(--accent-bg); border: 2px solid var(--accent-br); }
+  .lg.dark { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  .tp-label { left: 40px; top: 108px; width: 300px; }
+  .tp-label .hdr h3 { font-size: 20px; }
+  .tp { top: 106px; height: 52px; border: 2px solid var(--built-br); background: var(--built-bg);
+        border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        font-size: 13.5px; font-weight: 700; color: var(--built-tx); text-align: center; padding: 4px 8px; line-height: 1.15; }
+  .tp small { font-weight: 500; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .avatar { left: 1268px; top: 162px; width: 90px; height: 78px; background: #fff; border: 2px solid var(--blue);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .avatar svg { width: 42px; height: 42px; }
+
+  .app { left: 300px; top: 258px; width: 2000px; height: 1178px; background: var(--blue);
+         border-radius: 18px; box-shadow: inset 0 0 0 6px rgba(255,255,255,.10); }
+  .app-title { left: 300px; top: 270px; width: 2000px; text-align: center; color: #fff;
+               font-size: 28px; font-weight: 700; letter-spacing: -0.3px; }
+  .app-sub { left: 300px; top: 306px; width: 2000px; text-align: center; color: #cfe3fb; font-size: 14.5px; }
+
+  .panel { background: #fff; border-radius: 12px; border: 1px solid var(--card-br); padding: 14px 18px 16px; }
+  .panel > .hdr { margin-bottom: 4px; }
+  .panel .note { font-size: 13px; color: var(--muted); }
+
+  .box { border-radius: 9px; padding: 10px 12px; display: flex; flex-direction: column; }
+  .box .bt { font-size: 16.5px; font-weight: 700; line-height: 1.15; }
+  .box .bs { font-size: 12.8px; line-height: 1.35; color: #40566d; margin-top: 4px; }
+  .box .bp { font-size: 12.2px; line-height: 1.3; margin-top: auto; padding-top: 7px; font-weight: 600; }
+  .s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .s1 .bt { color: var(--built-tx); } .s1 .bp { color: var(--built-br); }
+  .ac { background: var(--accent-bg); border: 2px solid var(--accent-br); }
+  .ac .bt { color: var(--accent-tx); } .ac .bs { color: #2c4a72; } .ac .bp { color: var(--accent-br); }
+
+  .chip { border-radius: 7px; padding: 7px 10px; font-size: 13px; font-weight: 600; line-height: 1.28;
+          background: var(--built-bg); border: 2px solid var(--built-br); color: var(--built-tx); }
+  .chip small { display: block; font-weight: 500; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .chip.ac { background: var(--accent-bg); border-color: var(--accent-br); color: var(--accent-tx); }
+
+  .side { width: 240px; background: #fff; border: 2px solid var(--blue); border-radius: 14px; padding: 14px 14px 16px; }
+  .side .icon { width: 44px; height: 44px; border-radius: 50%; background: var(--navy); color: #fff;
+                display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
+  .side h3 { margin: 9px 0 0; font-size: 18px; line-height: 1.16; }
+  .side .cap { margin-top: 4px; font-size: 12.8px; }
+  .side .stackchips { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .side .stackchips .chip { font-size: 12.4px; padding: 6px 8px; }
+
+  .foundation { left: 40px; top: 1478px; width: 2520px; height: 148px; background: #fff;
+                border: 2px solid var(--card-br); border-radius: 14px; padding: 12px 18px; }
+  .foundation .row { display: flex; gap: 9px; margin-top: 8px; }
+  .foundation .row .chip { flex: 1 1 0; text-align: center; }
+  .footnote { left: 40px; top: 1644px; width: 2520px; font-size: 14.5px; color: var(--muted); line-height: 1.45; }
+  .footnote b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <svg class="wires" viewBox="0 0 2600 1740" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a-navy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0b2e55"/>
+      </marker>
+      <marker id="a-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0f6bd4"/>
+      </marker>
+      <marker id="a-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#12805c"/>
+      </marker>
+    </defs>
+
+    <line x1="485" y1="190" x2="1264" y2="190" stroke="#12805c" stroke-width="2.4"/>
+    <line x1="1378" y1="190" x2="2105" y2="190" stroke="#12805c" stroke-width="2.4"/>
+    <g stroke="#12805c" stroke-width="2.2">
+      <line x1="485" y1="158" x2="485" y2="190"/>
+      <line x1="755" y1="158" x2="755" y2="190"/>
+      <line x1="1025" y1="158" x2="1025" y2="190"/>
+      <line x1="1295" y1="158" x2="1295" y2="190"/>
+      <line x1="1565" y1="158" x2="1565" y2="190"/>
+      <line x1="1835" y1="158" x2="1835" y2="190"/>
+      <line x1="2105" y1="158" x2="2105" y2="190"/>
+    </g>
+    <line x1="1310" y1="240" x2="1310" y2="255" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <g stroke="#12805c" stroke-width="3">
+      <line x1="695" y1="448" x2="735" y2="448" marker-end="url(#a-green)"/>
+      <line x1="1084" y1="448" x2="1124" y2="448" marker-end="url(#a-green)"/>
+      <line x1="1473" y1="448" x2="1513" y2="448" marker-end="url(#a-green)"/>
+      <line x1="1862" y1="448" x2="1902" y2="448" marker-end="url(#a-green)"/>
+    </g>
+    <g stroke="#12805c" stroke-width="3">
+      <line x1="988" y1="698" x2="1022" y2="698" marker-end="url(#a-green)"/>
+      <line x1="1304" y1="698" x2="1338" y2="698" marker-end="url(#a-green)"/>
+      <line x1="1620" y1="698" x2="1654" y2="698" marker-end="url(#a-green)"/>
+      <line x1="1936" y1="698" x2="1970" y2="698" marker-end="url(#a-green)"/>
+    </g>
+    <g stroke="#0b2e55" stroke-width="2.2" stroke-dasharray="6 4">
+      <line x1="848" y1="818" x2="848" y2="848" marker-end="url(#a-navy)"/>
+      <line x1="1164" y1="818" x2="1164" y2="848" marker-end="url(#a-navy)"/>
+      <line x1="1480" y1="818" x2="1480" y2="848" marker-end="url(#a-navy)"/>
+      <line x1="1796" y1="818" x2="1796" y2="848" marker-end="url(#a-navy)"/>
+      <line x1="2112" y1="818" x2="2112" y2="848" marker-end="url(#a-navy)"/>
+    </g>
+    <line x1="1300" y1="514" x2="1300" y2="534" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <line x1="1300" y1="988" x2="1300" y2="1008" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <line x1="284" y1="450" x2="326" y2="450" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="284" y1="920" x2="326" y2="920" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="2276" y1="520" x2="2316" y2="520" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <path d="M2316 790 L2286 790" stroke="#0b2e55" stroke-width="2.4" stroke-dasharray="7 5" marker-end="url(#a-navy)" fill="none"/>
+    <line x1="2316" y1="1120" x2="2276" y2="1120" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <line x1="1300" y1="1474" x2="1300" y2="1442" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+  </svg>
+
+  <div class="title">
+    <h1>NEXUS 2.0 <span>· enterprise target flow</span></h1>
+    <p>Next-phase architecture only. Every box is the upgraded stack — role on the chip, library or protocol under it.</p>
+  </div>
+  <div class="legend">
+    <div class="lg"><span class="sw s1"></span>Enterprise stack</div>
+    <div class="lg"><span class="sw ac"></span>LangGraph / A2A / MCP / RAG</div>
+    <div class="lg dark"><span>&#9995;</span>Human gate</div>
+  </div>
+
+  <div class="tp-label">
+    <div class="hdr"><span class="num">1</span><h3>Touchpoints</h3></div>
+    <p class="cap">Work arrives here. Slack is inbound only.</p>
+  </div>
+  <div class="tp" style="left:360px; width:250px;">Slack message<small>Bolt · Events API</small></div>
+  <div class="tp" style="left:630px; width:250px;">Chat prompt<small>React · FastAPI</small></div>
+  <div class="tp" style="left:900px; width:250px;">File upload<small>multipart · object store</small></div>
+  <div class="tp" style="left:1170px; width:250px;">Mailbox<small>IMAP · unread</small></div>
+  <div class="tp" style="left:1440px; width:250px;">Canvas edits<small>React Flow</small></div>
+  <div class="tp" style="left:1710px; width:250px;">Approve click &#9995;<small>RBAC · nexus.approve</small></div>
+  <div class="tp" style="left:1980px; width:250px;">Artefact download<small>signed URL · S3</small></div>
+  <div class="avatar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#0f6bd4" stroke-width="1.8">
+      <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>
+    </svg>
+  </div>
+
+  <div class="app"></div>
+  <div class="app-title">Nexus application &nbsp;·&nbsp; enterprise runtime</div>
+  <div class="app-sub">LangGraph runs the flow &nbsp;·&nbsp; A2A at the edge &nbsp;·&nbsp; MCP for tools &nbsp;·&nbsp; OIDC + RBAC on every call &nbsp;·&nbsp; Guardrails on model, tool and dispatch</div>
+
+  <div class="panel" style="left:330px; top:336px; width:1940px; height:178px;">
+    <div class="hdr"><span class="num">2</span><h3>Orchestration &nbsp;·&nbsp; LangGraph is the runner</h3>
+      <span class="note">The canvas still authors a JSON graph. At run time that graph is compiled into a LangGraph StateGraph and executed with checkpoints.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:396px; width:345px; height:100px;">
+    <span class="bt">Interview</span>
+    <span class="bs">Budgeted questions, grounded in uploads and Slack text</span>
+    <span class="bp">Instructor · Pydantic output</span>
+  </div>
+  <div class="box s1" style="left:739px; top:396px; width:345px; height:100px;">
+    <span class="bt">Typed requirements</span>
+    <span class="bs">Each answer validated into a schema slot</span>
+    <span class="bp">Pydantic v2</span>
+  </div>
+  <div class="box s1" style="left:1128px; top:396px; width:345px; height:100px;">
+    <span class="bt">Graph assembly</span>
+    <span class="bs">User-editable JSON DAG, still drawn on the canvas</span>
+    <span class="bp">Pydantic Pipeline · React Flow</span>
+  </div>
+  <div class="box ac" style="left:1517px; top:396px; width:345px; height:100px;">
+    <span class="bt">Compile to LangGraph</span>
+    <span class="bs">JSON nodes become a StateGraph with named edges</span>
+    <span class="bp">langgraph · StateGraph.compile()</span>
+  </div>
+  <div class="box ac" style="left:1906px; top:396px; width:345px; height:100px;">
+    <span class="bt">LangGraph run</span>
+    <span class="bs">Checkpoint, interrupt for approval, stream, resume</span>
+    <span class="bp">PostgresSaver · astream · interrupt</span>
+  </div>
+
+  <div class="panel" style="left:330px; top:534px; width:1940px; height:454px;">
+    <div class="hdr"><span class="num">3</span><h3>Five specialist skills &nbsp;·&nbsp; each skill is a LangGraph node</h3>
+      <span class="note">Skills still never call each other. They emit an A2A message. Guardrails sit on the model call, the tool call, and the formula.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:592px; width:320px; height:374px;">
+    <span class="bt">Skill anatomy</span>
+    <span class="bs">Same five types. New wiring around them.</span>
+    <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+      <div class="chip ac">LangGraph node<small>StateGraph add_node</small></div>
+      <div class="chip ac">A2A skill card<small>/.well-known/agent.json</small></div>
+      <div class="chip ac">MCP tools<small>scoped per node</small></div>
+      <div class="chip ac">Guardrails<small>NeMo · Llama Guard</small></div>
+      <div class="chip">Formula sandbox<small>AST whitelist, kept</small></div>
+    </div>
+  </div>
+  <div class="box s1" style="left:710px; top:592px; width:278px; height:222px;">
+    <span class="bt">Ingestion</span>
+    <span class="bs">Tables, documents, mail, Slack payload; schema inferred</span>
+    <span class="bp">pandas · Unstructured · IMAP<br>out: default</span>
+  </div>
+  <div class="box s1" style="left:1026px; top:592px; width:278px; height:222px;">
+    <span class="bt">Matching</span>
+    <span class="bs">Keys, windows, score; entity resolution against master data</span>
+    <span class="bp">Custom matcher · LLM<br>out: matched · residuals · exceptions</span>
+  </div>
+  <div class="box s1" style="left:1342px; top:592px; width:278px; height:222px;">
+    <span class="bt">Math</span>
+    <span class="bs">User formula, still sandboxed, never arbitrary code</span>
+    <span class="bp">AST sandbox<br>out: default</span>
+  </div>
+  <div class="box s1" style="left:1658px; top:592px; width:278px; height:222px;">
+    <span class="bt">Decision</span>
+    <span class="bs">Verdict grounded in hybrid RAG passages, then guardrailed</span>
+    <span class="bp">LLM · RAG · Llama Guard<br>out: approved · flagged · escalated</span>
+  </div>
+  <div class="box s1" style="left:1974px; top:592px; width:278px; height:222px;">
+    <span class="bt">Output</span>
+    <span class="bs">Artefacts plus a LangGraph interrupt until a person clicks</span>
+    <span class="bp">openpyxl · ReportLab &nbsp;<span class="gate">&#9995;</span><br>out: artefacts</span>
+  </div>
+  <div class="box ac" style="left:710px; top:848px; width:1542px; height:116px;">
+    <span class="bt">A2A message &nbsp;·&nbsp; what moves between skills and outside agents</span>
+    <span class="bs">Internal envelope mapped to an A2A task. Same fields, on the wire when a second agent exists.</span>
+    <div style="display:flex; gap:8px; margin-top:7px;">
+      <div class="chip ac" style="flex:1 1 0;">payload<small>A2A data part</small></div>
+      <div class="chip ac" style="flex:1 1 0;">exit port<small>task metadata</small></div>
+      <div class="chip ac" style="flex:1 1 0;">RAG passages<small>cited artefact</small></div>
+      <div class="chip ac" style="flex:1 1 0;">schema<small>part content-type</small></div>
+      <div class="chip ac" style="flex:1 1 0;">producer<small>agent card id</small></div>
+      <div class="chip ac" style="flex:1 1 0;">run / task id<small>A2A context</small></div>
+    </div>
+  </div>
+
+  <div class="panel" style="left:330px; top:1008px; width:1940px; height:398px;">
+    <div class="hdr"><span class="num">4</span><h3>What a skill can reach out to</h3>
+      <span class="note">Built-in writers stay. MCP and A2A are how new systems plug in. Guardrails sit in front of every write.</span>
+    </div>
+  </div>
+  <div class="chip" style="left:350px; top:1072px; width:300px;">Workbook writer<small>openpyxl</small></div>
+  <div class="chip" style="left:670px; top:1072px; width:300px;">Document writer<small>ReportLab</small></div>
+  <div class="chip" style="left:990px; top:1072px; width:300px;">Mailbox read<small>IMAP</small></div>
+  <div class="chip" style="left:1310px; top:1072px; width:300px;">Mail dispatch &#9995;<small>SMTP · after RBAC check</small></div>
+  <div class="chip" style="left:1630px; top:1072px; width:300px;">Business write-back &#9995;<small>httpx · SAP OData · idempotency</small></div>
+  <div class="chip" style="left:1950px; top:1072px; width:300px;">Model gateway<small>LiteLLM · Gemini / AI Core</small></div>
+
+  <div class="chip ac" style="left:350px; top:1162px; width:300px;">MCP client<small>@modelcontextprotocol/sdk</small></div>
+  <div class="chip ac" style="left:670px; top:1162px; width:300px;">MCP server<small>expose Nexus as tools</small></div>
+  <div class="chip ac" style="left:990px; top:1162px; width:300px;">Tool registry + allowlist<small>scopes · egress policy</small></div>
+  <div class="chip ac" style="left:1310px; top:1162px; width:300px;">A2A remote agents<small>a2a-sdk · task send</small></div>
+  <div class="chip ac" style="left:1630px; top:1162px; width:300px;">Agent discovery<small>A2A Agent Card</small></div>
+  <div class="chip ac" style="left:1950px; top:1162px; width:300px;">Business events<small>NATS or Kafka</small></div>
+
+  <div class="chip ac" style="left:350px; top:1252px; width:1900px;">
+    Guardrails wrap three places &nbsp;·&nbsp; model output: NeMo Guardrails / Llama Guard &nbsp;·&nbsp; tools: MCP allowlist + OPA &nbsp;·&nbsp; dispatch: RBAC nexus.approve + idempotency ledger
+    <small>A tool result is always data, never an instruction. A write never fires without an approver token.</small>
+  </div>
+
+  <div class="side" style="left:40px; top:336px; height:430px;">
+    <div class="icon">5</div>
+    <h3>Assembly workbench</h3>
+    <p class="cap">Design, test, then promote</p>
+    <div class="stackchips">
+      <div class="chip">Chat + Slack intake<small>React · Bolt</small></div>
+      <div class="chip">Generated config panel<small>JSON Schema</small></div>
+      <div class="chip">Canvas edit<small>React Flow</small></div>
+      <div class="chip">Dry run<small>side effects off</small></div>
+      <div class="chip">Golden replay<small>pytest + eval set</small></div>
+      <div class="chip">Promote / rollback<small>draft → approved → live</small></div>
+    </div>
+  </div>
+
+  <div class="side" style="left:40px; top:786px; height:510px;">
+    <div class="icon">6</div>
+    <h3>Context fabric · RAG</h3>
+    <p class="cap">Evidence a decision can cite</p>
+    <div class="stackchips">
+      <div class="chip">Parse &amp; chunk<small>Unstructured · pypdf</small></div>
+      <div class="chip">Embeddings<small>sentence-transformers</small></div>
+      <div class="chip ac">Vector index<small>Qdrant or pgvector</small></div>
+      <div class="chip ac">Hybrid retrieval<small>BM25 + dense + RRF</small></div>
+      <div class="chip ac">Rerank<small>cross-encoder</small></div>
+      <div class="chip">Knowledge graph<small>Neo4j or RDF</small></div>
+      <div class="chip">Tenant corpus<small>ACL on every query</small></div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:336px; height:560px;">
+    <div class="icon">7</div>
+    <h3>Assurance + drift</h3>
+    <p class="cap">Operate the fleet, catch quality slip</p>
+    <div class="stackchips">
+      <div class="chip">Tracing<small>OpenTelemetry · gen_ai spans</small></div>
+      <div class="chip">Metrics &amp; alerts<small>Prometheus · Grafana</small></div>
+      <div class="chip">Cost per run<small>tokens on the gateway</small></div>
+      <div class="chip ac">Drift monitor<small>Evidently</small></div>
+      <div class="chip ac">Input drift<small>schema &amp; volume shift</small></div>
+      <div class="chip ac">Model drift<small>pinned version change</small></div>
+      <div class="chip ac">Override-rate drift<small>reviewer disagreement</small></div>
+      <div class="chip">Eval &amp; gates<small>Ragas · golden replay</small></div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:916px; height:380px;">
+    <div class="icon">8</div>
+    <h3>Identity and policy</h3>
+    <p class="cap">Wraps every call into the blue box</p>
+    <div class="stackchips">
+      <div class="chip ac">Sign-in<small>OIDC · Keycloak / Auth0</small></div>
+      <div class="chip ac">RBAC scopes<small>view · build · run · approve</small></div>
+      <div class="chip ac">ABAC / policy<small>OPA or Cedar</small></div>
+      <div class="chip">Secrets<small>HashiCorp Vault</small></div>
+      <div class="chip">Acting user outbound<small>token exchange</small></div>
+      <div class="chip">Tenant filter<small>on every query</small></div>
+    </div>
+  </div>
+
+  <div class="foundation">
+    <div class="hdr"><span class="num">9</span><h3>Runtime foundation</h3>
+      <span class="note">What the enterprise picture sits on. LangGraph checkpoints here; the API stays FastAPI.</span>
+    </div>
+    <div class="row">
+      <div class="chip">Web API<small>FastAPI · Uvicorn</small></div>
+      <div class="chip">Orchestrator<small>LangGraph + PostgresSaver</small></div>
+      <div class="chip">Workers<small>Kubernetes jobs / replicas</small></div>
+      <div class="chip">Database<small>PostgreSQL</small></div>
+      <div class="chip">Files<small>S3 or MinIO</small></div>
+      <div class="chip">Cache / locks<small>Redis</small></div>
+      <div class="chip">Telemetry<small>OTel collector</small></div>
+      <div class="chip">CI / CD<small>GitHub Actions · signed image</small></div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>Read it as a sentence:</b> work arrives at a touchpoint including Slack (1). Requirements are typed, the JSON graph is compiled into LangGraph and run with checkpoints (2).
+    Five skills execute as LangGraph nodes and hand A2A messages (3). Writers, SAP, MCP tools and remote agents are reached only after RBAC and guardrails (4).
+    The workbench tests and promotes the flow (5). Hybrid RAG supplies cited evidence (6). OpenTelemetry plus a drift block watch quality (7).
+    Identity and policy wrap every call (8). Kubernetes, Postgres, object storage and Vault sit underneath (9).
+  </div>
+
+</div>
+</body>
+</html>

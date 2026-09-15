@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Nexus 2.0 — Architecture flow</title>
+<style>
+  :root {
+    --ink: #12243a;
+    --muted: #5d6f85;
+    --navy: #0b2e55;
+    --blue: #0f6bd4;
+    --blue-dk: #0a4f9e;
+    --built-bg: #eafaf1; --built-br: #12805c; --built-tx: #0a5c43;
+    --part-bg: #fff6e6;  --part-br: #b25e09;  --part-tx: #8a4708;
+    --plan-bg: #f1f3f7;  --plan-br: #9aa5b8;  --plan-tx: #53617a;
+    --card-br: #cfdcea;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  .stage { position: relative; width: 2600px; height: 1690px; background: #fff; }
+  .stage > * { position: absolute; }
+  /* wires sit above the cards so every arrow stays visible; they are only ever
+     drawn in the gaps between cards, and arrowheads stop at a card edge */
+  .wires { left: 0; top: 0; width: 2600px; height: 1690px; z-index: 3; pointer-events: none; }
+  .stage > div { z-index: 2; }
+
+  /* ---- shared bits ---- */
+  .num { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+         border-radius: 50%; background: var(--navy); color: #fff; font-weight: 700; font-size: 17px; flex: 0 0 auto; }
+  .gate { display: inline-block; background: var(--navy); color: #fff; font-size: 11px; font-weight: 700;
+          border-radius: 4px; padding: 2px 7px; letter-spacing: .3px; }
+  .hdr { display: flex; align-items: center; gap: 12px; }
+  .hdr h3 { margin: 0; font-size: 21px; letter-spacing: -0.2px; }
+  .cap { margin: 5px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--muted); font-style: italic; }
+
+  /* ---- header ---- */
+  .title { left: 40px; top: 26px; width: 1420px; }
+  .title h1 { margin: 0; font-size: 40px; letter-spacing: -0.6px; }
+  .title h1 span { color: var(--muted); font-weight: 600; }
+  .title p { margin: 7px 0 0; font-size: 17px; color: var(--muted); }
+  .legend { left: 1520px; top: 30px; width: 1040px; display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; }
+  .lg { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 600;
+        border: 1px solid var(--card-br); border-radius: 20px; padding: 7px 14px 7px 10px; }
+  .sw { width: 20px; height: 20px; border-radius: 5px; flex: 0 0 auto; }
+  .sw.s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .sw.s2 { background: var(--part-bg); border: 2px dashed var(--part-br); }
+  .sw.s3 { background: var(--plan-bg); border: 2px dotted var(--plan-br); }
+  .lg.dark { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  /* ---- 1 touchpoints ---- */
+  .tp-label { left: 40px; top: 112px; width: 320px; }
+  .tp-label .hdr h3 { font-size: 20px; }
+  .tp { top: 110px; height: 46px; border: 2px solid var(--built-br); background: var(--built-bg);
+        border-radius: 23px; display: flex; align-items: center; justify-content: center;
+        font-size: 14.5px; font-weight: 600; color: var(--built-tx); text-align: center; padding: 0 10px; }
+  .avatar { left: 1252px; top: 148px; width: 96px; height: 84px; background: #fff; border: 2px solid var(--blue);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .avatar svg { width: 46px; height: 46px; }
+
+  /* ---- main container ---- */
+  .app { left: 300px; top: 250px; width: 2000px; height: 1130px; background: var(--blue);
+         border-radius: 18px; box-shadow: inset 0 0 0 6px rgba(255,255,255,.10); }
+  .app-title { left: 300px; top: 262px; width: 2000px; text-align: center; color: #fff;
+               font-size: 30px; font-weight: 700; letter-spacing: -0.3px; }
+  .app-sub { left: 300px; top: 300px; width: 2000px; text-align: center; color: #cfe3fb; font-size: 15px; }
+
+  .panel { background: #fff; border-radius: 12px; border: 1px solid var(--card-br); padding: 16px 20px 18px; }
+  .panel > .hdr { margin-bottom: 4px; }
+  .panel .note { font-size: 13.5px; color: var(--muted); }
+
+  /* ---- boxes ---- */
+  .box { border-radius: 9px; padding: 11px 13px; display: flex; flex-direction: column; }
+  .box .bt { font-size: 17px; font-weight: 700; line-height: 1.15; }
+  .box .bs { font-size: 13px; line-height: 1.38; color: #40566d; margin-top: 5px; }
+  .box .bp { font-size: 12.5px; line-height: 1.3; margin-top: auto; padding-top: 8px; font-weight: 600; }
+  .s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .s1 .bt { color: var(--built-tx); } .s1 .bp { color: var(--built-br); }
+  .s2 { background: var(--part-bg); border: 2px dashed var(--part-br); }
+  .s2 .bt { color: var(--part-tx); } .s2 .bs { color: #6b4a22; } .s2 .bp { color: var(--part-br); }
+  .s3 { background: var(--plan-bg); border: 2px dotted var(--plan-br); }
+  .s3 .bt { color: var(--plan-tx); } .s3 .bs { color: #5c6a80; } .s3 .bp { color: var(--plan-tx); }
+
+  /* ---- chips ---- */
+  .chip { border-radius: 7px; padding: 8px 11px; font-size: 13.5px; font-weight: 600; line-height: 1.3; }
+  .chip small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .chip.s1 { color: var(--built-tx); } .chip.s2 { color: var(--part-tx); } .chip.s3 { color: var(--plan-tx); }
+  .chip.s2 small, .chip.s3 small { color: inherit; opacity: .8; }
+
+  /* ---- side panels ---- */
+  .side { width: 240px; background: #fff; border: 2px solid var(--blue); border-radius: 14px; padding: 15px 15px 17px; }
+  .side .icon { width: 46px; height: 46px; border-radius: 50%; background: var(--navy); color: #fff;
+                display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 700; }
+  .side h3 { margin: 10px 0 0; font-size: 19px; line-height: 1.16; }
+  .side .cap { margin-top: 5px; }
+  .side .stackchips { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
+  .side .stackchips .chip { font-size: 12.8px; padding: 7px 9px; }
+
+  /* ---- foundation ---- */
+  .foundation { left: 40px; top: 1420px; width: 2520px; height: 152px; background: #fff;
+                border: 2px solid var(--card-br); border-radius: 14px; padding: 14px 20px; }
+  .foundation .row { display: flex; gap: 10px; margin-top: 9px; }
+  .foundation .row .chip { flex: 1 1 0; text-align: center; }
+  .footnote { left: 40px; top: 1596px; width: 2520px; font-size: 15px; color: var(--muted); line-height: 1.5; }
+  .footnote b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <!-- =================== WIRES =================== -->
+  <svg class="wires" viewBox="0 0 2600 1690" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a-navy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0b2e55"/>
+      </marker>
+      <marker id="a-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0f6bd4"/>
+      </marker>
+      <marker id="a-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#12805c"/>
+      </marker>
+      <marker id="a-grey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#8d99ac"/>
+      </marker>
+    </defs>
+
+    <!-- touchpoint rail -->
+    <line x1="530" y1="186" x2="1246" y2="186" stroke="#12805c" stroke-width="2.4"/>
+    <line x1="1354" y1="186" x2="2130" y2="186" stroke="#12805c" stroke-width="2.4"/>
+    <g stroke="#12805c" stroke-width="2.2">
+      <line x1="530" y1="156" x2="530" y2="186"/>
+      <line x1="850" y1="156" x2="850" y2="186"/>
+      <line x1="1170" y1="156" x2="1170" y2="186"/>
+      <line x1="1490" y1="156" x2="1490" y2="186"/>
+      <line x1="1810" y1="156" x2="1810" y2="186"/>
+      <line x1="2130" y1="156" x2="2130" y2="186"/>
+    </g>
+    <line x1="1300" y1="232" x2="1300" y2="247" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <!-- 2 orchestration chain -->
+    <g stroke="#12805c" stroke-width="3">
+      <line x1="695" y1="438" x2="735" y2="438" marker-end="url(#a-green)"/>
+      <line x1="1084" y1="438" x2="1124" y2="438" marker-end="url(#a-green)"/>
+      <line x1="1473" y1="438" x2="1513" y2="438" marker-end="url(#a-green)"/>
+      <line x1="1862" y1="438" x2="1902" y2="438" marker-end="url(#a-green)"/>
+    </g>
+
+    <!-- 3 skill chain -->
+    <g stroke="#12805c" stroke-width="3">
+      <line x1="988" y1="690" x2="1022" y2="690" marker-end="url(#a-green)"/>
+      <line x1="1304" y1="690" x2="1338" y2="690" marker-end="url(#a-green)"/>
+      <line x1="1620" y1="690" x2="1654" y2="690" marker-end="url(#a-green)"/>
+      <line x1="1936" y1="690" x2="1970" y2="690" marker-end="url(#a-green)"/>
+    </g>
+    <!-- skills drop into the envelope bar -->
+    <g stroke="#0b2e55" stroke-width="2.2" stroke-dasharray="6 4">
+      <line x1="848" y1="812" x2="848" y2="846" marker-end="url(#a-navy)"/>
+      <line x1="1164" y1="812" x2="1164" y2="846" marker-end="url(#a-navy)"/>
+      <line x1="1480" y1="812" x2="1480" y2="846" marker-end="url(#a-navy)"/>
+      <line x1="1796" y1="812" x2="1796" y2="846" marker-end="url(#a-navy)"/>
+      <line x1="2112" y1="812" x2="2112" y2="846" marker-end="url(#a-navy)"/>
+    </g>
+    <!-- orchestration feeds the skills -->
+    <line x1="1300" y1="504" x2="1300" y2="524" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <!-- envelope result feeds the capability row -->
+    <line x1="1300" y1="994" x2="1300" y2="1014" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <!-- 5 workbench into the app -->
+    <line x1="284" y1="452" x2="326" y2="452" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <!-- 6 context fabric into the app -->
+    <line x1="284" y1="930" x2="326" y2="930" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <!-- 7 app emits evidence -->
+    <line x1="2276" y1="520" x2="2316" y2="520" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <!-- 7 evidence loops back as an improvement -->
+    <path d="M2316 790 L2286 790" stroke="#0b2e55" stroke-width="2.4" stroke-dasharray="7 5" marker-end="url(#a-navy)" fill="none"/>
+    <!-- 8 identity and policy would wrap every call -->
+    <line x1="2316" y1="1060" x2="2276" y2="1060" stroke="#8d99ac" stroke-width="3" stroke-dasharray="7 5" marker-end="url(#a-grey)"/>
+    <!-- 9 foundation carries the app -->
+    <line x1="1300" y1="1416" x2="1300" y2="1386" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+  </svg>
+
+  <!-- =================== HEADER =================== -->
+  <div class="title">
+    <h1>NEXUS 2.0 <span>· how the application flows today</span></h1>
+    <p>Follow the numbers. Every green element runs in the current build; amber is a thin version; grey is not written yet.</p>
+  </div>
+  <div class="legend">
+    <div class="lg"><span class="sw s1"></span>Built now</div>
+    <div class="lg"><span class="sw s2"></span>Partial</div>
+    <div class="lg"><span class="sw s3"></span>To be developed</div>
+    <div class="lg dark"><span>&#9995;</span>Human gate</div>
+  </div>
+
+  <!-- =================== 1 TOUCHPOINTS =================== -->
+  <div class="tp-label">
+    <div class="hdr"><span class="num">1</span><h3>Touchpoints</h3></div>
+    <p class="cap">Where work arrives and where the person stays in control</p>
+  </div>
+  <div class="tp" style="left:380px;  width:300px;">Chat prompt</div>
+  <div class="tp" style="left:700px;  width:300px;">Spreadsheet &amp; document upload</div>
+  <div class="tp" style="left:1020px; width:300px;">Mailbox, unread only</div>
+  <div class="tp" style="left:1340px; width:300px;">Canvas edits</div>
+  <div class="tp" style="left:1660px; width:300px;">Approve click &#9995;</div>
+  <div class="tp" style="left:1980px; width:300px;">Artefact download</div>
+  <div class="avatar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#0f6bd4" stroke-width="1.8">
+      <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>
+    </svg>
+  </div>
+
+  <!-- =================== APP CONTAINER =================== -->
+  <div class="app"></div>
+  <div class="app-title">Nexus application</div>
+  <div class="app-sub">One Python service, one typed contract, one canvas — no agent framework in the middle</div>
+
+  <!-- ---------- 2 ORCHESTRATION ---------- -->
+  <div class="panel" style="left:330px; top:330px; width:1940px; height:174px;">
+    <div class="hdr"><span class="num">2</span><h3>Orchestration &nbsp;·&nbsp; understand, then assemble the flow</h3>
+      <span class="note">The model fills in values. The graph itself is computed in code, so the same answers always build the same flow.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:390px; width:345px; height:96px;">
+    <span class="bt">Interview</span><span class="bs">Budgeted questions, one at a time, grounded in what was uploaded</span>
+  </div>
+  <div class="box s1" style="left:739px; top:390px; width:345px; height:96px;">
+    <span class="bt">Typed requirements</span><span class="bs">Each answer validated into a schema slot, or refused as out of scope</span>
+  </div>
+  <div class="box s1" style="left:1128px; top:390px; width:345px; height:96px;">
+    <span class="bt">Graph assembly</span><span class="bs">Desired flow computed, diffed, revealed onto the canvas step by step</span>
+  </div>
+  <div class="box s1" style="left:1517px; top:390px; width:345px; height:96px;">
+    <span class="bt">Level plan</span><span class="bs">Cycle-checked topological order; independent steps grouped together</span>
+  </div>
+  <div class="box s1" style="left:1906px; top:390px; width:345px; height:96px;">
+    <span class="bt">Parallel run</span><span class="bs">Each level fans out on the event loop, progress streamed live</span>
+  </div>
+
+  <!-- ---------- 3 SKILLS ---------- -->
+  <div class="panel" style="left:330px; top:524px; width:1940px; height:470px;">
+    <div class="hdr"><span class="num">3</span><h3>Five specialist skills &nbsp;·&nbsp; the only things that ever touch the data</h3>
+      <span class="note">Each one is a boiler plate: a versioned behaviour file, a config schema, modes, and named exit ports.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:584px; width:320px; height:386px;">
+    <span class="bt">Skill anatomy</span>
+    <span class="bs">Same shape every time, so a new skill drops in without engine changes.</span>
+    <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
+      <div class="chip s1">Behaviour version <small>YAML, listable per skill</small></div>
+      <div class="chip s1">Config from schema <small>panel generated, not coded</small></div>
+      <div class="chip s1">Mode <small>switches the strategy inside</small></div>
+      <div class="chip s1">Named exit ports <small>routing declared, not scripted</small></div>
+      <div class="chip s1">Guardrails <small>checked grammar and output</small></div>
+    </div>
+  </div>
+  <div class="box s1" style="left:710px; top:584px; width:278px; height:228px;">
+    <span class="bt">Ingestion</span><span class="bs">Reads tabular data, documents or a mailbox; infers the schema</span>
+    <span class="bp">out: default</span>
+  </div>
+  <div class="box s1" style="left:1026px; top:584px; width:278px; height:228px;">
+    <span class="bt">Matching</span><span class="bs">Aligns records on declared keys and windows; scores the pairing</span>
+    <span class="bp">out: matched · residuals · exceptions</span>
+  </div>
+  <div class="box s1" style="left:1342px; top:584px; width:278px; height:228px;">
+    <span class="bt">Math</span><span class="bs">Plain-language formula compiled to a checked expression, then applied</span>
+    <span class="bp">out: default</span>
+  </div>
+  <div class="box s1" style="left:1658px; top:584px; width:278px; height:228px;">
+    <span class="bt">Decision</span><span class="bs">Judges each record against the policy and the retrieved passages</span>
+    <span class="bp">out: approved · flagged · escalated</span>
+  </div>
+  <div class="box s1" style="left:1974px; top:584px; width:278px; height:228px;">
+    <span class="bt">Output</span><span class="bs">Writes the artefacts and prepares the dispatch for review</span>
+    <span class="bp">out: artefacts &nbsp;<span class="gate">&#9995;</span></span>
+  </div>
+  <div class="box s1" style="left:710px; top:846px; width:1542px; height:124px;">
+    <span class="bt">Envelope &nbsp;·&nbsp; the only thing that moves between skills</span>
+    <div style="display:flex; gap:9px; margin-top:9px;">
+      <div class="chip s1" style="flex:1 1 0;">payload</div>
+      <div class="chip s1" style="flex:1 1 0;">exit port</div>
+      <div class="chip s1" style="flex:1 1 0;">knowledge context</div>
+      <div class="chip s1" style="flex:1 1 0;">schema reference</div>
+      <div class="chip s1" style="flex:1 1 0;">producer stamp</div>
+      <div class="chip s1" style="flex:1 1 0;">run id</div>
+    </div>
+  </div>
+
+  <!-- ---------- 4 CAPABILITIES ---------- -->
+  <div class="panel" style="left:330px; top:1014px; width:1940px; height:346px;">
+    <div class="hdr"><span class="num">4</span><h3>What a skill can reach out to</h3>
+      <span class="note">Top row exists today. Bottom row is the open protocol work that would let any tool or outside agent plug in.</span>
+    </div>
+  </div>
+  <div class="chip s1" style="left:350px; top:1082px; width:300px;">Workbook writer<small>themed multi-sheet output</small></div>
+  <div class="chip s1" style="left:670px; top:1082px; width:300px;">Document writer<small>branded PDF with charts</small></div>
+  <div class="chip s1" style="left:990px; top:1082px; width:300px;">Mailbox read<small>unread only, then flagged</small></div>
+  <div class="chip s1" style="left:1310px; top:1082px; width:300px;">Mail dispatch &#9995;<small>drafted, never auto-sent</small></div>
+  <div class="chip s1" style="left:1630px; top:1082px; width:300px;">Business system write-back &#9995;<small>creates the document, returns its key</small></div>
+  <div class="chip s1" style="left:1950px; top:1082px; width:300px;">Model providers<small>two, interchangeable, task-routed</small></div>
+
+  <div class="chip s3" style="left:350px; top:1200px; width:300px;">Tool protocol client<small>call any external tool server</small></div>
+  <div class="chip s3" style="left:670px; top:1200px; width:300px;">Tool protocol server<small>expose Nexus skills as tools</small></div>
+  <div class="chip s3" style="left:990px; top:1200px; width:300px;">Tool registry<small>versioned, permissioned inventory</small></div>
+  <div class="chip s3" style="left:1310px; top:1200px; width:300px;">Business events &amp; actions<small>react instead of polling</small></div>
+  <div class="chip s3" style="left:1630px; top:1200px; width:300px;">Remote agents<small>delegate a sub-task and reconcile</small></div>
+  <div class="chip s3" style="left:1950px; top:1200px; width:300px;">Agent hub discovery<small>publish and find capability cards</small></div>
+
+  <div style="left:350px; top:1290px; width:1900px; font-size:14px; color:#5d6f85;">
+    <b style="color:#12243a;">Nothing in this row fires on its own.</b>
+    Dispatch and write-back both wait for a person to click, and the click is recorded against the run.
+  </div>
+
+  <!-- =================== SIDE PANELS =================== -->
+  <div class="side" style="left:40px; top:330px; height:414px;">
+    <div class="icon">5</div>
+    <h3>Assembly workbench</h3>
+    <p class="cap">Where a flow gets built and packaged</p>
+    <div class="stackchips">
+      <div class="chip s1">Chat and upload intake</div>
+      <div class="chip s1">Generated config panel</div>
+      <div class="chip s1">Canvas edit, then re-sync</div>
+      <div class="chip s1">Preview and confirm &#9995;</div>
+      <div class="chip s1">Package into the library</div>
+      <div class="chip s2">Dry run and replay<small>developer suites only today</small></div>
+    </div>
+  </div>
+
+  <div class="side" style="left:40px; top:760px; height:480px;">
+    <div class="icon">6</div>
+    <h3>Context fabric</h3>
+    <p class="cap">What the agent needs to know</p>
+    <div class="stackchips">
+      <div class="chip s1">Parse and infer the schema</div>
+      <div class="chip s1">Chunk the documents</div>
+      <div class="chip s1">Extract typed facts</div>
+      <div class="chip s2">Retrieval, RAG<small>lexical scoring, not semantic</small></div>
+      <div class="chip s3">Embeddings and vector store</div>
+      <div class="chip s3">Knowledge graph and semantics</div>
+      <div class="chip s3">Governed data products</div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:330px; height:520px;">
+    <div class="icon">7</div>
+    <h3>Assurance and agent ops</h3>
+    <p class="cap">Proof it worked, and the loop back</p>
+    <div class="stackchips">
+      <div class="chip s1">Run trace per step</div>
+      <div class="chip s1">Latency per step</div>
+      <div class="chip s1">Structured logs</div>
+      <div class="chip s1">Lineage and row explain</div>
+      <div class="chip s2">Versioning<small>no promotion workflow yet</small></div>
+      <div class="chip s3">Evaluation and regression</div>
+      <div class="chip s3">Drift, cost and alerts</div>
+      <div class="chip s3">Release gates</div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:882px; height:358px;">
+    <div class="icon">8</div>
+    <h3>Identity and policy</h3>
+    <p class="cap">Would wrap every call above</p>
+    <div class="stackchips">
+      <div class="chip s3">Single sign-on</div>
+      <div class="chip s3">Authorization and scopes</div>
+      <div class="chip s3">Acting-user propagation</div>
+      <div class="chip s3">Policy enforcement point</div>
+      <div class="chip s3">Execution sandbox</div>
+    </div>
+  </div>
+
+  <!-- =================== 9 FOUNDATION =================== -->
+  <div class="foundation">
+    <div class="hdr"><span class="num">9</span><h3>Runtime foundation</h3>
+      <span class="note">Deliberately plain, with one swap seam left open where the file store is today.</span>
+    </div>
+    <div class="row">
+      <div class="chip s1">Async Python API</div>
+      <div class="chip s1">One typed model layer</div>
+      <div class="chip s1">Event-loop concurrency</div>
+      <div class="chip s1">Node-graph web client</div>
+      <div class="chip s1">Atomic file store<small>database seam</small></div>
+      <div class="chip s1">Managed cloud platform</div>
+      <div class="chip s3">Transactional database</div>
+      <div class="chip s3">Object storage</div>
+      <div class="chip s3">Queue and workers</div>
+      <div class="chip s3">Delivery pipeline</div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>Read it as a sentence:</b> work arrives at a touchpoint (1), the orchestration understands it and assembles a flow (2), five specialist skills execute that flow and hand a typed envelope to each other (3),
+    a skill may reach a writer, a mailbox or a business system but only after a person clicks (4). The workbench builds and packages the flow (5), the context fabric supplies the evidence (6),
+    assurance records what happened and feeds the next version (7), identity and policy are the missing wrapper (8), and it all sits on a plain runtime (9).
+  </div>
+
+</div>
+</body>
+</html>
