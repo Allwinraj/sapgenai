@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cherry — architecture flow</title>
+<style>
+  :root {
+    --ink: #12243a;
+    --muted: #5d6f85;
+    --navy: #0b2e55;
+    --blue: #0f6bd4;
+    --built-bg: #eafaf1; --built-br: #12805c; --built-tx: #0a5c43;
+    --gold-bg: #fff6e4; --gold-br: #c9891a; --gold-tx: #8a5b00;
+    --card-br: #cfdcea;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+  .stage { position: relative; width: 2600px; height: 1620px; background: #fff; }
+  .stage > * { position: absolute; }
+  .wires { left: 0; top: 0; width: 2600px; height: 1620px; z-index: 3; pointer-events: none; }
+  .stage > div { z-index: 2; }
+
+  .num { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+         border-radius: 50%; background: var(--navy); color: #fff; font-weight: 700; font-size: 17px; flex: 0 0 auto; }
+  .gate { display: inline-block; background: var(--navy); color: #fff; font-size: 11px; font-weight: 700;
+          border-radius: 4px; padding: 2px 7px; letter-spacing: .3px; }
+  .hdr { display: flex; align-items: center; gap: 12px; }
+  .hdr h3 { margin: 0; font-size: 21px; letter-spacing: -0.2px; }
+  .cap { margin: 5px 0 0; font-size: 13.5px; line-height: 1.4; color: var(--muted); font-style: italic; }
+
+  .title { left: 40px; top: 22px; width: 1680px; }
+  .title h1 { margin: 0; font-size: 38px; letter-spacing: -0.6px; }
+  .title h1 span { color: var(--muted); font-weight: 600; }
+  .title p { margin: 7px 0 0; font-size: 16.5px; color: var(--muted); }
+  .legend { left: 1720px; top: 26px; width: 840px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .lg { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 600;
+        border: 1px solid var(--card-br); border-radius: 20px; padding: 7px 14px 7px 10px; }
+  .sw { width: 20px; height: 20px; border-radius: 5px; flex: 0 0 auto; }
+  .sw.s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .sw.s2 { background: var(--gold-bg); border: 2px solid var(--gold-br); }
+  .lg.dark { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  .tp-label { left: 40px; top: 108px; width: 300px; }
+  .tp-label .hdr h3 { font-size: 20px; }
+  .tp { top: 106px; height: 46px; border: 2px solid var(--built-br); background: var(--built-bg);
+        border-radius: 23px; display: flex; align-items: center; justify-content: center;
+        font-size: 14.5px; font-weight: 600; color: var(--built-tx); text-align: center; padding: 0 10px; }
+  .avatar { left: 2140px; top: 154px; width: 86px; height: 74px; background: #fff; border: 2px solid var(--blue);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .avatar svg { width: 42px; height: 42px; }
+
+  .app { left: 300px; top: 246px; width: 2000px; height: 1054px; background: var(--blue);
+         border-radius: 18px; box-shadow: inset 0 0 0 6px rgba(255,255,255,.10); }
+  .app-title { left: 300px; top: 256px; width: 2000px; text-align: center; color: #fff;
+               font-size: 28px; font-weight: 700; letter-spacing: -0.3px; }
+  .app-sub { left: 300px; top: 292px; width: 2000px; text-align: center; color: #cfe3fb; font-size: 15px; }
+
+  .panel { background: #fff; border-radius: 12px; border: 1px solid var(--card-br); padding: 14px 20px 16px; }
+  .panel > .hdr { margin-bottom: 2px; }
+  .panel .note { font-size: 13.5px; color: var(--muted); }
+
+  .box { border-radius: 9px; padding: 10px 12px; display: flex; flex-direction: column; }
+  .box .bt { font-size: 16px; font-weight: 700; line-height: 1.15; }
+  .box .bs { font-size: 13px; line-height: 1.35; color: #40566d; margin-top: 4px; }
+  .box .bp { font-size: 12.5px; line-height: 1.3; margin-top: auto; padding-top: 7px; font-weight: 600; }
+  .s1 { background: var(--built-bg); border: 2px solid var(--built-br); }
+  .s1 .bt { color: var(--built-tx); } .s1 .bp { color: var(--built-br); }
+  .s2 { background: var(--gold-bg); border: 2px solid var(--gold-br); }
+  .s2 .bt { color: var(--gold-tx); } .s2 .bp { color: var(--gold-br); }
+  .hub { background: var(--navy); border: 2px solid var(--navy); color: #fff; }
+  .hub .bt { color: #fff; } .hub .bs { color: #c9d7ea; } .hub .bp { color: #ffe08a; }
+
+  .chip { border-radius: 7px; padding: 8px 11px; font-size: 13.5px; font-weight: 600; line-height: 1.3;
+          background: var(--built-bg); border: 2px solid var(--built-br); color: var(--built-tx); }
+  .chip small { display: block; font-weight: 500; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .chip.gold { background: var(--gold-bg); border-color: var(--gold-br); color: var(--gold-tx); }
+
+  .side { width: 240px; background: #fff; border: 2px solid var(--blue); border-radius: 14px; padding: 14px 14px 16px; }
+  .side .icon { width: 46px; height: 46px; border-radius: 50%; background: var(--navy); color: #fff;
+                display: flex; align-items: center; justify-content: center; font-size: 21px; font-weight: 700; }
+  .side h3 { margin: 10px 0 0; font-size: 18px; line-height: 1.16; }
+  .side .cap { margin-top: 5px; }
+  .side .stackchips { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
+  .side .stackchips .chip { font-size: 12.6px; padding: 7px 9px; }
+
+  .foundation { left: 40px; top: 1340px; width: 2520px; height: 148px; background: #fff;
+                border: 2px solid var(--card-br); border-radius: 14px; padding: 14px 20px; }
+  .foundation .row { display: flex; gap: 10px; margin-top: 8px; }
+  .foundation .row .chip { flex: 1 1 0; }
+  .footnote { left: 40px; top: 1508px; width: 2520px; font-size: 15px; color: var(--muted); line-height: 1.5; }
+  .footnote b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+  <svg class="wires" viewBox="0 0 2600 1620" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a-navy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0b2e55"/>
+      </marker>
+      <marker id="a-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#0f6bd4"/>
+      </marker>
+      <marker id="a-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#12805c"/>
+      </marker>
+      <marker id="a-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L10 5 L0 10 z" fill="#c9891a"/>
+      </marker>
+    </defs>
+
+    <line x1="530" y1="182" x2="2170" y2="182" stroke="#12805c" stroke-width="2.4"/>
+    <g stroke="#12805c" stroke-width="2.2">
+      <line x1="530" y1="152" x2="530" y2="182"/>
+      <line x1="850" y1="152" x2="850" y2="182"/>
+      <line x1="1170" y1="152" x2="1170" y2="182"/>
+      <line x1="1490" y1="152" x2="1490" y2="182"/>
+      <line x1="1810" y1="152" x2="1810" y2="182"/>
+      <line x1="2170" y1="152" x2="2170" y2="182"/>
+    </g>
+    <line x1="1300" y1="228" x2="1300" y2="243" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <!-- conversation row 1 -->
+    <g stroke="#12805c" stroke-width="3">
+      <line x1="810" y1="424" x2="848" y2="424" marker-end="url(#a-green)"/>
+      <line x1="1290" y1="424" x2="1328" y2="424" marker-end="url(#a-green)"/>
+      <line x1="1770" y1="424" x2="1808" y2="424" marker-end="url(#a-green)"/>
+    </g>
+    <!-- down to row 2 then continue -->
+    <line x1="2050" y1="478" x2="2050" y2="498" stroke="#c9891a" stroke-width="3" marker-end="url(#a-gold)"/>
+    <g stroke="#c9891a" stroke-width="3">
+      <line x1="810" y1="548" x2="848" y2="548" marker-end="url(#a-gold)"/>
+      <line x1="1290" y1="548" x2="1328" y2="548" marker-end="url(#a-gold)"/>
+      <line x1="1770" y1="548" x2="1808" y2="548" marker-end="url(#a-gold)"/>
+    </g>
+    <line x1="350" y1="548" x2="810" y2="548" stroke="#c9891a" stroke-width="2" stroke-dasharray="6 4"/>
+
+    <line x1="1300" y1="612" x2="1300" y2="630" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <line x1="1300" y1="918" x2="1300" y2="936" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+    <line x1="1300" y1="1128" x2="1300" y2="1146" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+
+    <line x1="284" y1="430" x2="326" y2="430" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="284" y1="900" x2="326" y2="900" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="2276" y1="500" x2="2316" y2="500" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="2276" y1="980" x2="2316" y2="980" stroke="#0b2e55" stroke-width="3" marker-end="url(#a-navy)"/>
+    <line x1="1300" y1="1336" x2="1300" y2="1308" stroke="#0f6bd4" stroke-width="3" marker-end="url(#a-blue)"/>
+  </svg>
+
+  <div class="title">
+    <h1>CHERRY <span>· architecture flow</span></h1>
+    <p>Same story as the long poster. Follow the numbers. Gold is ROI. The last graph gives the solution after gold. Example: suppliers go dark, the team hears late.</p>
+  </div>
+  <div class="legend">
+    <div class="lg"><span class="sw s1"></span>Cherry step / graph</div>
+    <div class="lg"><span class="sw s2"></span>ROI — no product yet</div>
+    <div class="lg dark"><span>&#9995;</span>Human gate</div>
+  </div>
+
+  <div class="tp-label">
+    <div class="hdr"><span class="num">1</span><h3>How work arrives</h3></div>
+    <p class="cap">A person stays in the room</p>
+  </div>
+  <div class="tp" style="left:360px;  width:300px;">Chat</div>
+  <div class="tp" style="left:680px;  width:300px;">Workshop</div>
+  <div class="tp" style="left:1000px; width:300px;">Documents</div>
+  <div class="tp" style="left:1320px; width:300px;">Landscape &amp; KPIs</div>
+  <div class="tp" style="left:1640px; width:300px;">Constraints</div>
+  <div class="tp" style="left:1960px; width:320px;">Confirm / sign &#9995;</div>
+  <div class="avatar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#0f6bd4" stroke-width="1.8">
+      <circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>
+    </svg>
+  </div>
+
+  <div class="app"></div>
+  <div class="app-title">Cherry</div>
+  <div class="app-sub">Fed catalogs &nbsp;·&nbsp; process context &nbsp;·&nbsp; facts + benchmarks &nbsp;·&nbsp; ROI &nbsp;·&nbsp; last graph gives the solution. Cherry does not run it.</div>
+
+  <!-- 2 conversation -->
+  <div class="panel" style="left:330px; top:326px; width:1940px; height:286px;">
+    <div class="hdr"><span class="num">2</span><h3>Conversation &nbsp;·&nbsp; eight steps in order</h3>
+      <span class="note">Cannot skip gold. If facts are weak, loop. If they reject the sentence, return to gold — not to a product.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:386px; width:460px; height:92px;">
+    <span class="bt">Listen</span>
+    <span class="bs">Who is talking, what hurts</span>
+    <span class="bp">“I’m procurement. Suppliers go dark. We hear late.”</span>
+  </div>
+  <div class="box s1" style="left:848px; top:386px; width:442px; height:92px;">
+    <span class="bt">Name it</span>
+    <span class="bs">Resolve Industry KG + Persona ontology + Process context</span>
+    <span class="bp">Manufacturing KG · director links · monitoring as-is</span>
+  </div>
+  <div class="box s1" style="left:1328px; top:386px; width:442px; height:92px;">
+    <span class="bt">Find the gap</span>
+    <span class="bs">Reads Process. Names the missing control</span>
+    <span class="bp">No control today — Excel and mail</span>
+  </div>
+  <div class="box s1" style="left:1808px; top:386px; width:442px; height:92px;">
+    <span class="bt">Check facts</span>
+    <span class="bs">Case facts + related benchmarks</span>
+    <span class="bp">Spend = fact. Peer lag shown. Their lag = ask</span>
+  </div>
+  <div class="box s2" style="left:350px; top:502px; width:460px; height:92px;">
+    <span class="bt">Score ROI</span>
+    <span class="bs">Value graph = the calculation. No door.</span>
+    <span class="bp">thin / real / material — you vs peer, still not a product</span>
+  </div>
+  <div class="box s1" style="left:848px; top:502px; width:442px; height:92px;">
+    <span class="bt">Give options</span>
+    <span class="bs">Solution graph starts after ROI</span>
+    <span class="bp">Watchlist · live signal · quarterly pack</span>
+  </div>
+  <div class="box s1" style="left:1328px; top:502px; width:442px; height:92px;">
+    <span class="bt">Give the solution</span>
+    <span class="bs">Last graph names the door</span>
+    <span class="bp">Spend in SAP. No EY hit. Compose the signal.</span>
+  </div>
+  <div class="box s1" style="left:1808px; top:502px; width:442px; height:92px;">
+    <span class="bt">Sign off &#9995;</span>
+    <span class="bs">Persona must be allowed to sign</span>
+    <span class="bp">Director freezes the blueprint. Cherry stops.</span>
+  </div>
+
+  <!-- 3 graphs -->
+  <div class="panel" style="left:330px; top:630px; width:1940px; height:288px;">
+    <div class="hdr"><span class="num">3</span><h3>Six graphs &nbsp;·&nbsp; Process is the centre</h3>
+      <span class="note">Industry KG and persona ontology are fed. Process is context. Evidence adds benchmarks. Value is ROI. Solution is last and stays empty until after gold.</span>
+    </div>
+  </div>
+  <div class="box s1" style="left:350px; top:690px; width:300px; height:208px;">
+    <span class="bt">Industry · fed KG</span>
+    <span class="bs">We feed sector, chain, allowed processes and pools. Chat only resolves this client.</span>
+    <span class="bp">Need: bounds from the industry graph<br>If missing: stop — do not invent a sector<br>Ex: manufacturing KG allows monitoring + visibility</span>
+  </div>
+  <div class="box hub" style="left:665px; top:690px; width:300px; height:208px;">
+    <span class="bt">Process · context hub</span>
+    <span class="bs">Depot ID plus as-is, systems, volume, plants — how it actually runs here.</span>
+    <span class="bp">Need: a gap and a lever in context<br>If missing: do not run ROI, do not give a solution<br>Ex: monitoring · no control · Excel + mail · this plant</span>
+  </div>
+  <div class="box s1" style="left:980px; top:690px; width:300px; height:208px;">
+    <span class="bt">Persona · ontology</span>
+    <span class="bs">Roles linked to tasks, decisions, authority, KPIs — not a single title.</span>
+    <span class="bp">Need: the right KPI and a real signer<br>If missing: analyst must not confirm<br>Ex: director → days-to-see-risk → may sign</span>
+  </div>
+  <div class="box s1" style="left:1295px; top:690px; width:300px; height:208px;">
+    <span class="bt">Evidence · facts + bench</span>
+    <span class="bs">Case facts plus related benchmarks for this use case. Benchmark is shown, not silently used as their number.</span>
+    <span class="bp">Need: ROI inputs + comparison<br>If missing: ask; peer lag stays labelled benchmark<br>Ex: 38% top-20 = fact. Peer days = related</span>
+  </div>
+  <div class="box s2" style="left:1610px; top:690px; width:300px; height:208px;">
+    <span class="bt">Value · ROI</span>
+    <span class="bs">The ROI calculation. Pool, lever, KPI, formula, band. Optional you vs peer. No product.</span>
+    <span class="bp">Need: worth without selling a platform<br>If missing: every workshop becomes a pitch<br>Ex: lag × concentration → MATERIAL</span>
+  </div>
+  <div class="box s1" style="left:1925px; top:690px; width:325px; height:208px;">
+    <span class="bt">Solution · last</span>
+    <span class="bs">After ROI, creates and gives the solution. Does not run it.</span>
+    <span class="bp">Need: an answer for a material ROI<br>If early: Cherry becomes a commercial<br>Ex: give live-signal · SAP + compose · no EY</span>
+  </div>
+
+  <!-- 4 value walk -->
+  <div class="panel" style="left:330px; top:936px; width:1940px; height:192px;">
+    <div class="hdr"><span class="num">4</span><h3>How ROI uses the graphs</h3>
+      <span class="note">Value is the ROI engine. Fixed order. Solution is not on this row.</span>
+    </div>
+  </div>
+  <div class="chip" style="left:350px;  top:1000px; width:360px;">Industry KG<small>Is visibility in the manufacturing graph? Yes.</small></div>
+  <div class="chip" style="left:730px;  top:1000px; width:360px;">Persona ontology<small>Linked KPI: days to see risk — not IT tickets.</small></div>
+  <div class="chip" style="left:1110px; top:1000px; width:360px;">Process context<small>What can change here? Live signal — no control today.</small></div>
+  <div class="chip" style="left:1490px; top:1000px; width:360px;">Evidence<small>Fact: concentration. Related: peer days. Their lag: ask.</small></div>
+  <div class="chip gold" style="left:1870px; top:1000px; width:380px;">ROI → band<small>Formula + you vs peer. Material. Still no door.</small></div>
+  <div style="left:350px; top:1072px; width:1900px; font-size:14px; color:#5d6f85; line-height:1.4;">
+    <b style="color:#12243a;">Cherry says:</b>
+    “ROI is material: you cannot see supplier risk in time, spend is concentrated, and peers see it faster. That is why it is worth doing. We have not given a solution yet.”
+  </div>
+
+  <!-- 5 doors -->
+  <div class="panel" style="left:330px; top:1146px; width:1940px; height:128px;">
+    <div class="hdr"><span class="num">5</span><h3>Last graph — give the solution</h3>
+      <span class="note">Creates the recommendation. Names a door. Does not run it.</span>
+    </div>
+  </div>
+  <div class="chip" style="left:350px;  top:1206px; width:360px;">SAP<small>Spend and vendor already live here</small></div>
+  <div class="chip" style="left:730px;  top:1206px; width:360px;">Joule<small>Only if they should stay in the SAP assistant</small></div>
+  <div class="chip" style="left:1110px; top:1206px; width:360px;">EY asset<small>Only if the registry really has this</small></div>
+  <div class="chip" style="left:1490px; top:1206px; width:360px;">Nexus<small>Compose a graph — files, match, human post</small></div>
+  <div class="chip" style="left:1870px; top:1206px; width:380px;">Custom<small>Unique work, no depot fit, no asset</small></div>
+
+  <div class="side" style="left:40px; top:326px; height:430px;">
+    <div class="icon">6</div>
+    <h3>Why graphs at all</h3>
+    <p class="cap">A chat log cannot score or route</p>
+    <div class="stackchips">
+      <div class="chip">Industry = fed knowledge graph</div>
+      <div class="chip">Persona = linked role ontology</div>
+      <div class="chip">Process = context on the hub</div>
+      <div class="chip">Evidence = facts + related benchmarks</div>
+      <div class="chip gold">Value = ROI calculation</div>
+      <div class="chip">Solution = last, gives the answer</div>
+    </div>
+  </div>
+
+  <div class="side" style="left:40px; top:772px; height:412px;">
+    <div class="icon">7</div>
+    <h3>If a graph is missing</h3>
+    <p class="cap">The next step does not guess</p>
+    <div class="stackchips">
+      <div class="chip">No industry KG → ask, do not invent</div>
+      <div class="chip">No process context → do not run ROI</div>
+      <div class="chip">No case fact → ask; show benchmark labelled</div>
+      <div class="chip">No path to a formula → no ROI paragraph</div>
+      <div class="chip">Solution during ROI → commercial</div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:326px; height:430px;">
+    <div class="icon">8</div>
+    <h3>What leaves Cherry</h3>
+    <p class="cap">The freeze after sign-off</p>
+    <div class="stackchips">
+      <div class="chip">The six graphs as this case</div>
+      <div class="chip">ROI band + formula + you vs peer</div>
+      <div class="chip">Facts vs benchmarks listed</div>
+      <div class="chip">Given solution + why-not doors</div>
+      <div class="chip">Signed blueprint &#9995;</div>
+    </div>
+  </div>
+
+  <div class="side" style="left:2320px; top:772px; height:412px;">
+    <div class="icon">9</div>
+    <h3>Not Cherry</h3>
+    <p class="cap">After the door</p>
+    <div class="stackchips">
+      <div class="chip">Running a pipeline</div>
+      <div class="chip">Canvas, match keys, formulas</div>
+      <div class="chip">SAP post or mail send</div>
+      <div class="chip">Building the EY asset</div>
+      <div class="chip">Writing custom software</div>
+    </div>
+  </div>
+
+  <div class="foundation">
+    <div class="hdr"><span class="num">10</span><h3>Read it as one sentence</h3>
+      <span class="note">This is the flow. Do not reverse gold and the doors.</span>
+    </div>
+    <div class="row">
+      <div class="chip">Arrive<small>chat or workshop</small></div>
+      <div class="chip">Name<small>industry · persona · process</small></div>
+      <div class="chip">Gap + evidence<small>process context · facts + benchmarks</small></div>
+      <div class="chip gold">ROI<small>value graph · formula · you vs peer</small></div>
+      <div class="chip">Give solution<small>last graph · capabilities</small></div>
+      <div class="chip">Door<small>SAP · Joule · EY · Nexus · custom</small></div>
+      <div class="chip">Sign &#9995;<small>blueprint · Cherry stops</small></div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>Flow:</b> work arrives (1). Cherry names from fed catalogs, hangs process context, checks facts and related benchmarks, runs ROI, then the last graph gives the solution and a person signs (2).
+    Six graphs sit under that — Process is the context hub (3). ROI walks Industry KG → Persona ontology → Process context → Evidence → formula, never a door (4).
+    Solution is last and only gives (5). Runtime is not Cherry (9).
+  </div>
+
+</div>
+</body>
+</html>

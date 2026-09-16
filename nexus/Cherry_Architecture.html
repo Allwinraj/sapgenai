@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cherry — how it works</title>
+<style>
+  :root {
+    --ink: #102033;
+    --muted: #5a6b80;
+    --navy: #0c2d52;
+    --line: #d5e0ec;
+    --green: #0d7a56;
+    --green-bg: #e7f7f0;
+    --blue: #1560c4;
+    --blue-bg: #eaf2fc;
+    --gold: #c9891a;
+    --gold-bg: #fff6e4;
+    --paper: #f6f8fb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
+
+  .page { max-width: 1180px; margin: 0 auto; padding: 48px 36px 80px; }
+
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin: 0 0 8px; }
+  h1 { font-size: 42px; letter-spacing: -0.7px; margin: 0; line-height: 1.1; }
+  h1 span { color: var(--muted); font-weight: 600; }
+  .lede { font-size: 18px; color: var(--muted); line-height: 1.5; margin: 14px 0 0; max-width: 720px; }
+
+  h2 { font-size: 22px; margin: 0 0 6px; }
+  .sub { margin: 0 0 18px; color: var(--muted); font-size: 15px; }
+
+  section { margin-top: 48px; }
+
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .step { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 18px; min-height: 132px; }
+  .step .n { width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 13px; font-weight: 700;
+             display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+  .step b { display: block; font-size: 16px; }
+  .step p { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+  .step.gold { background: var(--gold-bg); border-color: #ead29a; }
+
+  .hub-wrap { background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 28px 24px 32px; }
+  .row { display: grid; gap: 14px; }
+  .row3 { grid-template-columns: 1fr 1.2fr 1fr; align-items: stretch; }
+  .graph { border-radius: 16px; padding: 16px 18px; }
+  .graph h3 { margin: 0 0 6px; font-size: 17px; }
+  .graph p { margin: 0; font-size: 13.5px; line-height: 1.4; color: #3d5166; }
+  .g-green { background: var(--green-bg); border: 2px solid #8fd4b6; }
+  .g-green h3 { color: var(--green); }
+  .g-blue { background: var(--blue-bg); border: 2px solid #9fc0ee; }
+  .g-blue h3 { color: var(--blue); }
+  .g-hub { background: var(--navy); color: #fff; border: 2px solid var(--navy); }
+  .g-hub h3 { color: #fff; }
+  .g-hub p { color: #c9d7ea; }
+  .g-gold { background: var(--gold-bg); border: 2px solid #ead29a; }
+  .g-gold h3 { color: #8a5b00; }
+
+  .arrow { text-align: center; color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; padding: 4px 0; }
+
+  .walk { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .walk .box { background: #fff; border-radius: 14px; padding: 14px; border: 1px solid var(--line); position: relative; }
+  .walk .box:not(:last-child)::after {
+    content: "→"; position: absolute; right: -12px; top: 42%; color: var(--gold); font-weight: 700; font-size: 18px;
+  }
+  .walk .box b { display: block; font-size: 14px; margin-bottom: 6px; }
+  .walk .box p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.35; }
+  .walk .box.end { background: var(--gold-bg); border-color: #ead29a; }
+
+  .quote { margin-top: 16px; background: var(--navy); color: #fff; border-radius: 16px; padding: 18px 22px; font-size: 16px; line-height: 1.45; }
+  .quote small { display: block; margin-top: 8px; color: #b9c9dc; font-size: 13px; }
+
+  .later { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .later div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .later h3 { margin: 0 0 6px; font-size: 16px; }
+  .later p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+
+  .why { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .why article { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 18px 16px; }
+  .why h3 { margin: 0 0 8px; font-size: 17px; }
+  .why dl { margin: 0; }
+  .why dt { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); margin-top: 10px; }
+  .why dt:first-of-type { margin-top: 0; }
+  .why dd { margin: 4px 0 0; font-size: 14px; line-height: 1.4; color: #3d5166; }
+  .why .miss { color: #8a3a2a; }
+
+  footer { margin-top: 36px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="kicker">Cherry</p>
+  <h1>How Cherry works <span>· one picture</span></h1>
+  <p class="lede">
+    A person describes a pain. Cherry names the process, checks the facts, scores whether it is worth doing, then points at a place to build.
+    It does not run the solution. One example all the way through: suppliers go dark and the team hears too late.
+  </p>
+
+  <section>
+    <h2>1. The conversation</h2>
+    <p class="sub">Eight steps. Cherry can loop. It cannot skip “is it worth it?” and jump to a product.</p>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><b>Listen</b><p>“I’m procurement. Suppliers go dark. We hear late.”</p></div>
+      <div class="step"><div class="n">2</div><b>Name it</b><p>Industry = manufacturing. Role = director. Process = supplier monitoring.</p></div>
+      <div class="step"><div class="n">3</div><b>Find the gap</b><p>Monitoring has no real control. Today it is Excel and mail.</p></div>
+      <div class="step"><div class="n">4</div><b>Check facts</b><p>Their numbers plus related benchmarks. Lag they did not confirm stays a guess.</p></div>
+      <div class="step gold"><div class="n">5</div><b>Score ROI</b><p>Value graph runs the calculation. Thin / real / material. No product yet.</p></div>
+      <div class="step"><div class="n">6</div><b>Give options</b><p>Solution graph starts: watchlist, live signal, pack.</p></div>
+      <div class="step"><div class="n">7</div><b>Give the solution</b><p>Last graph names the door: SAP, Joule, EY, Nexus, or custom.</p></div>
+      <div class="step"><div class="n">8</div><b>Sign off</b><p>The director confirms. That freeze is the blueprint. Cherry stops.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. The six graphs</h2>
+    <p class="sub">Process sits in the middle. Industry and Persona are fed catalogs. Evidence brings facts and related benchmarks. Value is the ROI. Solution is last — it gives the answer, it does not run it.</p>
+    <div class="hub-wrap">
+      <div class="row row3">
+        <div class="graph g-green">
+          <h3>Industry · fed knowledge graph</h3>
+          <p>We feed Cherry an industry KG (chains, typical processes, pools, regulation). Chat only resolves this client onto it.</p>
+          <p style="margin-top:8px; font-weight:600; color:#0d7a56;">Manufacturing KG → supplier monitoring and visibility pool are allowed.</p>
+        </div>
+        <div class="graph g-hub">
+          <h3>Process · context hub</h3>
+          <p>Not only a name. Context around the depot ID: as-is vs expected, systems, volume, plants, how it actually runs here.</p>
+          <p style="margin-top:8px; font-weight:600; color:#fff;">Supplier monitoring · no control · Excel + mail · this plant.</p>
+        </div>
+        <div class="graph g-green">
+          <h3>Persona · linked ontology</h3>
+          <p>Roles linked to tasks, decisions, authority, and KPIs. Not a single job title.</p>
+          <p style="margin-top:8px; font-weight:600; color:#0d7a56;">Director → owns monitoring → KPI days-to-see-risk → may sign. Analyst cannot.</p>
+        </div>
+      </div>
+      <div class="arrow">name it on the catalogs · hang this client’s context on Process</div>
+      <div class="row row3">
+        <div class="graph g-blue">
+          <h3>Evidence · facts + benchmarks</h3>
+          <p>Case facts (their files) plus related industry/peer benchmarks for this use case. A benchmark is shown; it does not silently become their number.</p>
+          <p style="margin-top:8px; font-weight:600; color:#1560c4;">Fact: 38% spend in top 20. Benchmark: peers see risk in X days. Their lag = still ask.</p>
+        </div>
+        <div class="graph g-gold">
+          <h3>Value · ROI calculation</h3>
+          <p>This graph is the ROI engine: pool, lever, KPI, drivers, formula, band. Uses facts (and optional benchmark as comparison). Does not pick a product.</p>
+          <p style="margin-top:8px; font-weight:600; color:#8a5b00;">ROI: visibility lag × concentrated spend → MATERIAL. You vs peer shown. No door yet.</p>
+        </div>
+        <div class="graph g-blue">
+          <h3>Solution · last graph</h3>
+          <p>After ROI, this graph creates and gives the solution: what to do and which door. Cherry does not build or run it.</p>
+          <p style="margin-top:8px; font-weight:600; color:#1560c4;">Give: live-signal capability. Door: SAP for spend, compose the rest, no EY hit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Why these graphs exist</h2>
+    <p class="sub">Cherry is not a chat log. Each graph is a job. If you drop one, a later step lies.</p>
+    <div class="why">
+      <article>
+        <h3>Industry</h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>A knowledge graph we <b>feed</b> Cherry: sectors, value chains, typical processes, typical pools, regulation. The case only points at a node in that KG.</dd>
+          <dt>Why Cherry needs it</dt>
+          <dd>So “supplier monitoring” and a “visibility” pool are allowed in this industry — not copied from another sector’s story.</dd>
+          <dt>Impact</dt>
+          <dd>With a fed KG, scoring stays in bounds. Without it, Cherry invents work this company does not have.</dd>
+          <dt>If missing</dt>
+          <dd class="miss">Stop and ask. Do not grow a new industry inside the chat.</dd>
+        </dl>
+      </article>
+      <article>
+        <h3>Persona</h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>A <b>linked ontology</b> of roles: role → tasks → decisions → authority → KPIs they care about → other roles (director vs analyst vs controller).</dd>
+          <dt>Why Cherry needs it</dt>
+          <dd>ROI is the director’s “days to see risk,” not generic hours. Sign-off is a link on the ontology, not anyone with a browser.</dd>
+          <dt>Impact</dt>
+          <dd>With links, Cherry scores the right KPI and only a real owner can freeze. Without them, an analyst confirms and IT tickets get treated as value.</dd>
+          <dt>If missing</dt>
+          <dd class="miss">Keep mapping who owns the pain. Do not run ROI on a generic “user.”</dd>
+        </dl>
+      </article>
+      <article>
+        <h3>Process · the centre</h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>A <b>context graph</b> on a depot ID: expected control, as-is (Excel, mail, SAP), systems, volume, plants, exceptions — how it actually runs here.</dd>
+          <dt>Why Cherry needs it</dt>
+          <dd>Industry, Persona, Evidence, ROI levers, and Solution all attach to this process-in-context. A slogan is not enough.</dd>
+          <dt>Impact</dt>
+          <dd>With context, Diagnose has a gap and ROI knows what can change. Without it, every later graph is theatre.</dd>
+          <dt>If missing</dt>
+          <dd class="miss">Do not run ROI. Do not give a solution. Name the process and its as-is first.</dd>
+        </dl>
+      </article>
+      <article>
+        <h3>Evidence</h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>Two kinds of node: <b>case facts</b> (their files, confirmed numbers) and <b>related benchmarks</b> (peer / industry norms for this use case). Each has a source.</dd>
+          <dt>Why Cherry needs it</dt>
+          <dd>ROI needs numbers. Cherry should also <b>show</b> related benchmarks. A benchmark must not silently replace a missing case number.</dd>
+          <dt>Impact</dt>
+          <dd>With both, ROI can say “you vs peer.” Without case facts, MATERIAL is a guess. Without benchmarks, the case has no comparison.</dd>
+          <dt>If missing</dt>
+          <dd class="miss">Ask for their number. You may show a peer lag labelled “benchmark, not their fact.”</dd>
+        </dl>
+      </article>
+      <article>
+        <h3>Value</h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>The <b>ROI calculation</b>: pool → lever → KPI → driver → formula → band. Optional “you vs benchmark.” Solution is not an input.</dd>
+          <dt>Why Cherry needs it</dt>
+          <dd>This is how Cherry says “worth doing” without selling a platform. Industry KG, persona ontology, process context, and Evidence all feed ROI.</dd>
+          <dt>Impact</dt>
+          <dd>Thin ROI dies here. Material ROI is allowed to go to Solution. Without this graph, every workshop is a product pitch.</dd>
+          <dt>If missing</dt>
+          <dd class="miss">No path from process to formula means no ROI paragraph.</dd>
+        </dl>
+      </article>
+      <article>
+        <h3>Solution</h3>
+        <dl>
+          <dt>What it is</dt>
+          <dd>The <b>last graph</b>. After ROI it <b>creates and gives</b> the solution: capabilities plus a door (SAP, Joule, EY asset, Nexus, custom). It does not run the solution.</dd>
+          <dt>Why Cherry needs it</dt>
+          <dd>A material ROI still needs an answer. This is recommend, not build. Asset registry is checked here.</dd>
+          <dt>Impact</dt>
+          <dd>With it, the director leaves with a given solution and honest why-nots. Too early = a commercial. Never = ROI with nowhere to go.</dd>
+          <dt>If missing after material ROI</dt>
+          <dd class="miss">Cherry failed its last job. If it fills during ROI, Cherry failed its first job.</dd>
+        </dl>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. How ROI uses the graphs</h2>
+    <p class="sub">Value is the ROI calculation. Fixed order. Miss a hop, do not score. Solution is not on this row.</p>
+    <div class="walk">
+      <div class="box"><b>Industry KG</b><p>Is a visibility pool even in the manufacturing graph? Yes.</p></div>
+      <div class="box"><b>Persona ontology</b><p>Whose KPI is linked to this role? Days to see risk — not IT tickets.</p></div>
+      <div class="box"><b>Process context</b><p>What can change in how it runs here? Add a live signal — no control today.</p></div>
+      <div class="box"><b>Evidence</b><p>Case fact: concentration. Related benchmark: peer days. Their lag — ask, or label benchmark.</p></div>
+      <div class="box end"><b>ROI → band</b><p>Formula on allowed numbers. You vs peer. Material. Still no door.</p></div>
+    </div>
+    <div class="quote">
+      “ROI is material: you cannot see supplier risk in time, spend is concentrated, and peers see it faster. That is why it is worth doing. We have not given a solution yet.”
+      <small>If they refuse that sentence, Cherry goes back to ROI. It does not invent a product.</small>
+    </div>
+  </section>
+
+  <section>
+    <h2>5. Last graph — give the solution</h2>
+    <p class="sub">Solution turns on after ROI. It creates the recommendation and names a door. Cherry does not go inside.</p>
+    <div class="later">
+      <div>
+        <h3>Create what could help</h3>
+        <p>Watchlist. Continuous signal. A pack for the director. If the EY registry has this asset, include it. If not, do not pretend.</p>
+      </div>
+      <div>
+        <h3>Give the door</h3>
+        <p>SAP · Joule · EY asset · Nexus · custom. Example: spend stays in SAP, the signal is composed, not Joule, no EY hit. That is the given solution.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Cherry is fed industry and persona knowledge. It hangs this client’s process context, checks facts and related benchmarks, runs ROI, then the last graph gives a solution.
+    The signed picture is the blueprint. Running the solution is not Cherry.
+  </footer>
+
+</div>
+</body>
+</html>
